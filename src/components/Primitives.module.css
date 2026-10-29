@@ -1,0 +1,80 @@
+.pageHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pageHeading h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.pageHeading p {
+  margin: 0.75rem 0 0;
+  color: #647064;
+  line-height: 1.55;
+}
+
+.headingAction {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.error {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e8b5a8;
+  border-radius: 0.7rem;
+  color: #873e2e;
+  background: #fff3ef;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  color: #4c594f;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d8ded7;
+  border-radius: 0.55rem;
+  color: #1d2c22;
+  background: #fff;
+  font: inherit;
+}
+
+.field textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #527d5c;
+  outline: 3px solid #527d5c26;
+}
+
+@media (max-width: 640px) {
+  .pageHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .headingAction {
+    justify-content: flex-start;
+  }
+}
