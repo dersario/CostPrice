@@ -17,7 +17,7 @@ export interface ProductCostBreakdown {
 export function calculateIngredientCost(
   quantity: number,
   quantityUnit: RecipeItem['quantityUnit'],
-  ingredient: Pick<Ingredient, 'unit' | 'pricePerUnit'>,
+  ingredient: Pick<Ingredient, 'unit' | 'pricePerUnit' | 'hasPrice'>,
 ): number {
   if (!Number.isFinite(quantity) || quantity < 0) {
     throw new RangeError('Количество ингредиента должно быть неотрицательным числом.')
@@ -25,6 +25,7 @@ export function calculateIngredientCost(
   if (!Number.isFinite(ingredient.pricePerUnit) || ingredient.pricePerUnit < 0) {
     throw new RangeError('Цена ингредиента должна быть неотрицательным числом.')
   }
+  if (!ingredient.hasPrice) return 0
 
   const ingredientQuantity = convertQuantity(
     quantity,

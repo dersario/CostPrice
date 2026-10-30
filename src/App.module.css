@@ -1,6 +1,6 @@
 .app {
   min-height: 100vh;
-  background: #f6f7f4;
+  background: var(--page-bg);
 }
 
 .topbar {
@@ -10,8 +10,8 @@
   gap: 1.5rem;
   min-height: 4.5rem;
   padding: 0 clamp(1rem, 5vw, 4rem);
-  border-bottom: 1px solid #e2e7e1;
-  background: #fff;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .brand {
@@ -20,7 +20,7 @@
   gap: 0.65rem;
   padding: 0;
   border: 0;
-  color: #1d2c22;
+  color: var(--text);
   background: transparent;
   font: inherit;
   font-weight: 750;
@@ -34,8 +34,8 @@
   height: 2rem;
   place-items: center;
   border-radius: 0.65rem;
-  color: #fff;
-  background: #315d3d;
+  color: var(--primary-contrast);
+  background: var(--primary);
   font-family: Georgia, serif;
   font-size: 1.3rem;
   font-style: italic;
@@ -61,17 +61,17 @@
 }
 
 .navLink {
-  color: #657067;
+  color: var(--muted);
 }
 
 .navLink:hover {
-  color: #1d2c22;
-  background: #f2f4f1;
+  color: var(--text);
+  background: var(--soft);
 }
 
 .navActive {
-  color: #315d3d;
-  background: #eaf1e9;
+  color: var(--primary);
+  background: var(--primary-soft);
 }
 
 .main {
@@ -86,9 +86,9 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem clamp(1rem, 5vw, 4rem);
-  border-bottom: 1px solid #e8b5a8;
-  color: #873e2e;
-  background: #fff3ef;
+  border-bottom: 1px solid var(--error-border);
+  color: var(--error-text);
+  background: var(--error-bg);
 }
 
 .globalError button {

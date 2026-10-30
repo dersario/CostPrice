@@ -8,6 +8,7 @@ import {
   getWorkspaceCode,
   setWorkspaceCode,
 } from '../sync/workspace'
+import { colorThemes, type ColorTheme } from '../lib/themes'
 import styles from './Pages.module.css'
 
 interface SettingsPageProps {
@@ -19,6 +20,8 @@ interface SettingsPageProps {
   queuedCount: number
   onConnectionChange: (connected: boolean) => void
   onSyncNow: () => Promise<void>
+  theme: ColorTheme
+  onThemeChange: (theme: ColorTheme) => void
 }
 
 export function SettingsPage({
@@ -30,11 +33,14 @@ export function SettingsPage({
   queuedCount,
   onConnectionChange,
   onSyncNow,
+  theme,
+  onThemeChange,
 }: SettingsPageProps) {
   const [workspaceCode, setCode] = useState('')
   const [online, setOnline] = useState(navigator.onLine)
   const [queueCount, setQueueCount] = useState(queuedCount)
   const [error, setError] = useState<string | null>(null)
+  const [themeError, setThemeError] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -99,6 +105,16 @@ export function SettingsPage({
     await refreshQueue()
   }
 
+  function selectTheme(nextTheme: ColorTheme): void {
+    try {
+      localStorage.setItem('recipe-cost.color-theme', nextTheme)
+      onThemeChange(nextTheme)
+      setThemeError(null)
+    } catch (caught) {
+      setThemeError(messageOf(caught, 'Не удалось сохранить цветовую схему.'))
+    }
+  }
+
   return (
     <section>
       <PageHeading
@@ -106,7 +122,7 @@ export function SettingsPage({
         description="Синхронизация между устройствами — по желанию."
       />
 
-      <Feedback error={error ?? syncError} />
+      <Feedback error={error ?? themeError ?? syncError} />
 
       {!configured && (
         <div className={styles.notice}>
@@ -117,6 +133,37 @@ export function SettingsPage({
           </span>
         </div>
       )}
+
+      <section className={styles.settingsCard + ' ' + styles.themeCard}>
+        <div className={styles.sectionTitle}>
+          <div>
+            <h2>Цветовая схема</h2>
+            <p>Выберите оформление приложения. Выбор сохранится в этом браузере.</p>
+          </div>
+        </div>
+        <div aria-label="Цветовая схема" className={styles.themeChoices} role="group">
+          {colorThemes.map((option) => (
+            <button
+              aria-pressed={theme === option.id}
+              className={
+                theme === option.id
+                  ? `${styles.themeOption} ${styles.themeOptionActive}`
+                  : styles.themeOption
+              }
+              key={option.id}
+              onClick={() => selectTheme(option.id)}
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                className={styles.themeSwatch}
+                style={{ backgroundColor: option.primary }}
+              />
+              <span>{option.name}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <div className={styles.settingsGrid}>
         <section className={styles.settingsCard}>

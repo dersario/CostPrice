@@ -3,14 +3,16 @@ import { IngredientsPage } from './pages/IngredientsPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { isColorTheme, type ColorTheme } from './lib/themes'
 import { isSupabaseConfigured } from './sync/client'
 import { registerOnlineSync, synchronizeNow, type SyncResult } from './sync/synchronize'
 import { getWorkspaceCode } from './sync/workspace'
 import styles from './App.module.css'
 
-type Page = 'ingredients' | 'products' | 'detail' | 'settings'
+type Page = 'products' | 'recipes' | 'detail' | 'settings'
 
 const LAST_SYNC_KEY = 'recipe-cost.last-sync-at'
+const THEME_KEY = 'recipe-cost.color-theme'
 
 function App() {
   const [page, setPage] = useState<Page>('products')
@@ -20,6 +22,7 @@ function App() {
   const [syncError, setSyncError] = useState<string | null>(null)
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   const [queuedCount, setQueuedCount] = useState(0)
+  const [theme, setTheme] = useState<ColorTheme>('green')
   const syncInProgress = useRef(false)
   const configured = isSupabaseConfigured()
 
@@ -36,6 +39,23 @@ function App() {
       setSyncError(messageOf(error, 'Не удалось прочитать время последней синхронизации.'))
     }
   }, [])
+
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY)
+      if (isColorTheme(savedTheme)) setTheme(savedTheme)
+    } catch (error) {
+      setSyncError(messageOf(error, 'Не удалось прочитать цветовую схему.'))
+    }
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
+
+  function changeTheme(nextTheme: ColorTheme): void {
+    setTheme(nextTheme)
+  }
 
   const onSyncSuccess = useCallback((result: SyncResult) => {
     setLastSyncAt(result.synchronizedAt)
@@ -93,24 +113,24 @@ function App() {
         </button>
         <nav aria-label="Основная навигация" className={styles.nav}>
           <button
-            aria-current={page === 'ingredients' ? 'page' : undefined}
-            className={page === 'ingredients' ? styles.navActive : styles.navLink}
-            onClick={() => setPage('ingredients')}
-            type="button"
-          >
-            Ингредиенты
-          </button>
-          <button
-            aria-current={page === 'products' || page === 'detail' ? 'page' : undefined}
-            className={
-              page === 'products' || page === 'detail'
-                ? styles.navActive
-                : styles.navLink
-            }
+            aria-current={page === 'products' ? 'page' : undefined}
+            className={page === 'products' ? styles.navActive : styles.navLink}
             onClick={() => setPage('products')}
             type="button"
           >
             Продукты
+          </button>
+          <button
+            aria-current={page === 'recipes' || page === 'detail' ? 'page' : undefined}
+            className={
+              page === 'recipes' || page === 'detail'
+                ? styles.navActive
+                : styles.navLink
+            }
+            onClick={() => setPage('recipes')}
+            type="button"
+          >
+            Рецепты
           </button>
           <button
             aria-current={page === 'settings' ? 'page' : undefined}
@@ -133,12 +153,12 @@ function App() {
       )}
 
       <main className={styles.main}>
-        {page === 'ingredients' && <IngredientsPage />}
-        {page === 'products' && <ProductsPage onOpenProduct={openProduct} />}
+        {page === 'products' && <IngredientsPage />}
+        {page === 'recipes' && <ProductsPage onOpenProduct={openProduct} />}
         {page === 'detail' && selectedProductId && (
           <ProductDetailPage
             key={selectedProductId}
-            onBack={() => setPage('products')}
+            onBack={() => setPage('recipes')}
             productId={selectedProductId}
           />
         )}
@@ -155,6 +175,8 @@ function App() {
             queuedCount={queuedCount}
             syncError={syncError}
             syncing={syncing}
+            theme={theme}
+            onThemeChange={changeTheme}
           />
         )}
       </main>
