@@ -24,6 +24,36 @@ export class AppDatabase extends Dexie {
       directCosts: '&id, productId, category, updatedAt',
       syncQueue: '++id, queuedAt, [entity+entityId]',
     })
+
+    this.version(2)
+      .stores({
+        ingredients: '&id, name, updatedAt',
+        products: '&id, name, updatedAt',
+        recipeItems: '&id, productId, ingredientId, updatedAt',
+        directCosts: '&id, productId, category, updatedAt',
+        syncQueue: '++id, queuedAt, [entity+entityId]',
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table('ingredients').toCollection().modify((ingredient) => {
+          ingredient.purchaseQuantity = 1
+          ingredient.purchasePrice = ingredient.pricePerUnit
+          ingredient.hasPrice = true
+        })
+      })
+
+    this.version(3)
+      .stores({
+        ingredients: '&id, name, updatedAt',
+        products: '&id, name, updatedAt',
+        recipeItems: '&id, productId, ingredientId, updatedAt',
+        directCosts: '&id, productId, category, updatedAt',
+        syncQueue: '++id, queuedAt, [entity+entityId]',
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table('ingredients').toCollection().modify((ingredient) => {
+          ingredient.hasPrice = true
+        })
+      })
   }
 }
 

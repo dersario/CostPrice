@@ -7,9 +7,17 @@ import type {
   SyncEntity,
   SyncOperationType,
 } from '../types'
-import { compatibleUnits } from '../lib/units'
+import { compatibleUnits, convertQuantity } from '../lib/units'
 
 type NewRecord<T extends { updatedAt: string }> = Omit<T, 'updatedAt'>
+
+export interface RecipeLineInput {
+  id: string
+  ingredientName: string
+  quantity: number
+  quantityUnit: RecipeItem['quantityUnit']
+  pricePerUnit: number | null
+}
 
 export async function listIngredients(): Promise<Ingredient[]> {
   return db.ingredients.orderBy('name').toArray()
@@ -18,8 +26,13 @@ export async function listIngredients(): Promise<Ingredient[]> {
 export async function saveIngredient(
   input: NewRecord<Ingredient>,
 ): Promise<Ingredient> {
-  assertName(input.name, 'ингредиента')
-  assertNonNegative(input.pricePerUnit, 'Цена ингредиента')
+  assertName(input.name, 'продукта')
+  const purchaseQuantity = input.hasPrice ? input.purchaseQuantity : 1
+  const purchasePrice = input.hasPrice ? input.purchasePrice : 0
+  if (input.hasPrice) assertPositive(purchaseQuantity, 'Количество продукта')
+  assertNonNegative(purchasePrice, 'Цена продукта')
+  const pricePerUnit = purchasePrice / purchaseQuantity
+  assertNonNegative(pricePerUnit, 'Цена за единицу продукта')
 
   return db.transaction(
     'rw',
@@ -36,11 +49,17 @@ export async function saveIngredient(
         const acceptedUnits = compatibleUnits(input.unit)
         if (recipeItems.some((item) => !acceptedUnits.includes(item.quantityUnit))) {
           throw new Error(
-            'Нельзя изменить тип единицы: сначала обновите единицы в связанных рецептах.',
+            'Нельзя изменить тип единицы продукта: сначала обновите единицы в связанных рецептах.',
           )
         }
       }
-      const ingredient = { ...input, updatedAt: nextUpdatedAt(previous?.updatedAt) }
+      const ingredient = {
+        ...input,
+        purchaseQuantity,
+        purchasePrice,
+        pricePerUnit,
+        updatedAt: nextUpdatedAt(previous?.updatedAt),
+      }
       await db.ingredients.put(ingredient)
       await enqueue('ingredients', ingredient.id, 'upsert', ingredient.updatedAt)
       return ingredient
@@ -60,7 +79,7 @@ export async function deleteIngredient(id: string): Promise<void> {
         .equals(id)
         .count()
       if (usageCount > 0) {
-        throw new Error('Сначала удалите ингредиент из всех рецептов.')
+        throw new Error('Сначала удалите продукт из всех рецептов.')
       }
 
       const previous = await db.ingredients.get(id)
@@ -89,6 +108,52 @@ export async function saveProduct(input: NewRecord<Product>): Promise<Product> {
     await enqueue('products', product.id, 'upsert', product.updatedAt)
     return product
   })
+}
+
+export async function createProductWithRecipe(
+  input: NewRecord<Product>,
+  recipeItems: RecipeLineInput[],
+): Promise<Product> {
+  assertName(input.name, 'продукта')
+  assertPositive(input.outputQuantity, 'Количество готовой продукции')
+  for (const item of recipeItems) {
+    validateRecipeLine(item)
+  }
+
+  return db.transaction(
+    'rw',
+    db.products,
+    db.ingredients,
+    db.recipeItems,
+    db.syncQueue,
+    async () => {
+      const product = { ...input, updatedAt: nextUpdatedAt() }
+      await db.products.add(product)
+      await enqueue('products', product.id, 'upsert', product.updatedAt)
+
+      const ingredients = await db.ingredients.toArray()
+      for (const draft of recipeItems) {
+        const ingredient = await findOrCreateIngredient(
+          draft.ingredientName,
+          draft.quantityUnit,
+          draft.pricePerUnit,
+          ingredients,
+        )
+        const item: RecipeItem = {
+          id: draft.id,
+          productId: product.id,
+          ingredientId: ingredient.id,
+          quantity: draft.quantity,
+          quantityUnit: draft.quantityUnit,
+          updatedAt: now(),
+        }
+        await db.recipeItems.add(item)
+        await enqueue('recipeItems', item.id, 'upsert', item.updatedAt)
+      }
+
+      return product
+    },
+  )
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -143,9 +208,9 @@ export async function listAllRecipeItems(): Promise<RecipeItem[]> {
 }
 
 export async function saveRecipeItem(
-  input: NewRecord<RecipeItem>,
+  input: RecipeLineInput & Pick<RecipeItem, 'productId'>,
 ): Promise<RecipeItem> {
-  assertNonNegative(input.quantity, 'Количество ингредиента')
+  validateRecipeLine(input)
 
   return db.transaction(
     'rw',
@@ -154,18 +219,27 @@ export async function saveRecipeItem(
     db.ingredients,
     db.syncQueue,
     async () => {
-      const [product, ingredient] = await Promise.all([
-        db.products.get(input.productId),
-        db.ingredients.get(input.ingredientId),
-      ])
+      const product = await db.products.get(input.productId)
       if (!product) throw new Error('Продукт рецепта не найден.')
-      if (!ingredient) throw new Error('Ингредиент рецепта не найден.')
-      if (!compatibleUnits(ingredient.unit).includes(input.quantityUnit)) {
-        throw new Error('Единица количества должна совпадать с типом единицы ингредиента.')
-      }
-
       const previous = await db.recipeItems.get(input.id)
-      const item = { ...input, updatedAt: nextUpdatedAt(previous?.updatedAt) }
+      if (previous && previous.productId !== input.productId) {
+        throw new Error('Строка рецепта не принадлежит этому продукту.')
+      }
+      const ingredients = await db.ingredients.toArray()
+      const ingredient = await findOrCreateIngredient(
+        input.ingredientName,
+        input.quantityUnit,
+        input.pricePerUnit,
+        ingredients,
+      )
+      const item: RecipeItem = {
+        id: input.id,
+        productId: input.productId,
+        ingredientId: ingredient.id,
+        quantity: input.quantity,
+        quantityUnit: input.quantityUnit,
+        updatedAt: nextUpdatedAt(previous?.updatedAt),
+      }
       await db.recipeItems.put(item)
       await enqueue('recipeItems', item.id, 'upsert', item.updatedAt)
       return item
@@ -251,6 +325,69 @@ function assertPositive(value: number, label: string): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${label} должно быть больше нуля.`)
   }
+}
+
+function validateRecipeLine(input: RecipeLineInput): void {
+  assertName(input.ingredientName, 'продукта в рецепте')
+  assertNonNegative(input.quantity, 'Количество продукта')
+  if (input.pricePerUnit !== null) {
+    assertNonNegative(input.pricePerUnit, 'Цена продукта')
+  }
+}
+
+async function findOrCreateIngredient(
+  name: string,
+  unit: Ingredient['unit'],
+  pricePerUnit: number | null,
+  ingredients: Ingredient[],
+): Promise<Ingredient> {
+  const normalizedName = name.trim().toLocaleLowerCase()
+  const existing = ingredients.find(
+    (ingredient) => ingredient.name.trim().toLocaleLowerCase() === normalizedName,
+  )
+
+  if (!existing) {
+    const now = new Date().toISOString()
+    const ingredient: Ingredient = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      unit,
+      purchaseQuantity: 1,
+      purchasePrice: pricePerUnit ?? 0,
+      pricePerUnit: pricePerUnit ?? 0,
+      hasPrice: pricePerUnit !== null,
+      updatedAt: now,
+    }
+    await db.ingredients.add(ingredient)
+    await enqueue('ingredients', ingredient.id, 'upsert', ingredient.updatedAt)
+    ingredients.push(ingredient)
+    return ingredient
+  }
+
+  if (!compatibleUnits(existing.unit).includes(unit)) {
+    throw new Error(
+      `Единица «${unit}» не подходит продукту «${existing.name}». Измените единицу в строке рецепта.`,
+    )
+  }
+
+  if (pricePerUnit !== null) {
+    const priceInStoredUnit =
+      pricePerUnit / convertQuantity(1, unit, existing.unit)
+    const updated: Ingredient = {
+      ...existing,
+      purchaseQuantity: 1,
+      purchasePrice: priceInStoredUnit,
+      pricePerUnit: priceInStoredUnit,
+      hasPrice: true,
+      updatedAt: nextUpdatedAt(existing.updatedAt),
+    }
+    await db.ingredients.put(updated)
+    await enqueue('ingredients', updated.id, 'upsert', updated.updatedAt)
+    Object.assign(existing, updated)
+    return existing
+  }
+
+  return existing
 }
 
 function nextUpdatedAt(previous?: string): string {

@@ -3,15 +3,37 @@ create table if not exists public.ingredients (
   id uuid not null,
   name text,
   unit text check (unit in ('g', 'kg', 'ml', 'l', 'pcs')),
+  purchase_quantity numeric check (purchase_quantity > 0),
+  purchase_price numeric check (purchase_price >= 0),
   price_per_unit numeric check (price_per_unit >= 0),
+  has_price boolean not null default true,
   updated_at timestamptz(3) not null,
   is_deleted boolean not null default false,
   primary key (workspace_id, id),
   check (
     is_deleted
-    or (name is not null and length(trim(name)) > 0 and unit is not null and price_per_unit is not null)
+    or (
+      name is not null
+      and length(trim(name)) > 0
+      and unit is not null
+      and purchase_quantity is not null
+      and purchase_price is not null
+      and price_per_unit is not null
+    )
   )
 );
+
+alter table public.ingredients
+  add column if not exists purchase_quantity numeric check (purchase_quantity > 0);
+alter table public.ingredients
+  add column if not exists purchase_price numeric check (purchase_price >= 0);
+alter table public.ingredients
+  add column if not exists has_price boolean not null default true;
+update public.ingredients
+set purchase_quantity = 1,
+    purchase_price = price_per_unit
+where not is_deleted
+  and (purchase_quantity is null or purchase_price is null);
 
 create table if not exists public.products (
   workspace_id text not null check (workspace_id ~ '^[0-9a-f]{32}$'),

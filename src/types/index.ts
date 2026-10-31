@@ -6,7 +6,10 @@ export interface Ingredient {
   id: string
   name: string
   unit: MeasurementUnit
+  purchaseQuantity: number
+  purchasePrice: number
   pricePerUnit: number
+  hasPrice: boolean
   updatedAt: string
 }
 

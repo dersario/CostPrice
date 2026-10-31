@@ -334,7 +334,10 @@ function serializeRecord(
         ...common,
         name: record.name,
         unit: record.unit,
+        purchase_quantity: record.purchaseQuantity,
+        purchase_price: record.purchasePrice,
         price_per_unit: record.pricePerUnit,
+        has_price: record.hasPrice,
       }
     case 'products':
       if (!isProduct(record)) throw new Error('Неверные данные продукта.')
@@ -383,7 +386,15 @@ function serializeTombstone(
 
   switch (entity) {
     case 'ingredients':
-      return { ...common, name: null, unit: null, price_per_unit: null }
+      return {
+        ...common,
+        name: null,
+        unit: null,
+        purchase_quantity: null,
+        purchase_price: null,
+        price_per_unit: null,
+        has_price: true,
+      }
     case 'products':
       return {
         ...common,
@@ -434,7 +445,10 @@ function decodeRemoteRow(entity: SyncEntity, value: RemoteRow): RemoteEntry {
         updatedAt,
         name: requireString(value.name, 'name'),
         unit: requireUnit(value.unit),
+        purchaseQuantity: requireNumber(value.purchase_quantity, 'purchase_quantity'),
+        purchasePrice: requireNumber(value.purchase_price, 'purchase_price'),
         pricePerUnit: requireNumber(value.price_per_unit, 'price_per_unit'),
+        hasPrice: requireBoolean(value.has_price, 'has_price'),
       }
       break
     case 'products':
@@ -542,6 +556,13 @@ function requireString(value: unknown, field: string): string {
 
 function requireNumber(value: unknown, field: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Некорректное поле ${field} в данных синхронизации.`)
+  }
+  return value
+}
+
+function requireBoolean(value: unknown, field: string): boolean {
+  if (typeof value !== 'boolean') {
     throw new Error(`Некорректное поле ${field} в данных синхронизации.`)
   }
   return value

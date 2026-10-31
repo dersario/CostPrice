@@ -21,8 +21,8 @@ import {
 import { formatCurrency, formatNumber } from '../lib/format'
 import {
   compatibleUnits,
-  defaultRecipeUnit,
   isMeasurementUnit,
+  measurementUnits,
   unitLabels,
 } from '../lib/units'
 import type {
@@ -48,9 +48,10 @@ interface ProductDraft {
 }
 
 interface RecipeDraft {
-  ingredientId: string
+  name: string
   quantity: string
   quantityUnit: MeasurementUnit
+  pricePerUnit: string
 }
 
 interface DirectCostDraft {
@@ -60,9 +61,10 @@ interface DirectCostDraft {
 }
 
 const emptyRecipeDraft: RecipeDraft = {
-  ingredientId: '',
+  name: '',
   quantity: '',
   quantityUnit: 'g',
+  pricePerUnit: '',
 }
 
 const emptyDirectCostDraft: DirectCostDraft = {
@@ -142,7 +144,7 @@ export function ProductDetailPage({
 
     const outputQuantity = Number(productDraft.outputQuantity)
     if (!Number.isFinite(outputQuantity) || outputQuantity <= 0) {
-      setError('Количество готовой продукции должно быть больше нуля.')
+      setError('Количество на выходе должно быть больше нуля.')
       return
     }
 
@@ -165,7 +167,22 @@ export function ProductDetailPage({
     if (!product) return
     const quantity = Number(recipeDraft.quantity)
     if (!Number.isFinite(quantity) || quantity < 0) {
-      setError('Укажите корректное количество ингредиента.')
+      setError('Укажите корректное количество продукта.')
+      return
+    }
+    if (!recipeDraft.name.trim()) {
+      setError('Укажите название продукта.')
+      return
+    }
+    const pricePerUnit =
+      recipeDraft.pricePerUnit.trim() === ''
+        ? null
+        : Number(recipeDraft.pricePerUnit)
+    if (
+      pricePerUnit !== null &&
+      (!Number.isFinite(pricePerUnit) || pricePerUnit < 0)
+    ) {
+      setError('Цена продукта должна быть неотрицательным числом.')
       return
     }
 
@@ -173,9 +190,10 @@ export function ProductDetailPage({
       await saveRecipeItem({
         id: editingRecipeId ?? crypto.randomUUID(),
         productId: product.id,
-        ingredientId: recipeDraft.ingredientId,
+        ingredientName: recipeDraft.name.trim(),
         quantity,
         quantityUnit: recipeDraft.quantityUnit,
+        pricePerUnit,
       })
       setRecipeDraft(emptyRecipeDraft)
       setEditingRecipeId(null)
@@ -188,9 +206,12 @@ export function ProductDetailPage({
   function editRecipe(item: RecipeItem): void {
     setEditingRecipeId(item.id)
     setRecipeDraft({
-      ingredientId: item.ingredientId,
+      name:
+        ingredients.find((ingredient) => ingredient.id === item.ingredientId)
+          ?.name ?? '',
       quantity: String(item.quantity),
       quantityUnit: item.quantityUnit,
+      pricePerUnit: '',
     })
     setError(null)
   }
@@ -198,7 +219,7 @@ export function ProductDetailPage({
   async function removeRecipeItem(item: RecipeItem): Promise<void> {
     const ingredientName =
       ingredients.find((ingredient) => ingredient.id === item.ingredientId)?.name ??
-      'ингредиент'
+      'продукт'
     if (!window.confirm(`Удалить «${ingredientName}» из рецепта?`)) return
 
     try {
@@ -256,11 +277,20 @@ export function ProductDetailPage({
     }
   }
 
+  const selectedRecipeIngredient = ingredients.find(
+    (ingredient) =>
+      ingredient.name.trim().toLocaleLowerCase() ===
+      recipeDraft.name.trim().toLocaleLowerCase(),
+  )
+  const recipeUnits = selectedRecipeIngredient
+    ? compatibleUnits(selectedRecipeIngredient.unit)
+    : measurementUnits
+
   if (!product || !productDraft) {
     return (
       <section>
         <button className={styles.buttonSecondary} onClick={onBack} type="button">
-          ← К продуктам
+          ← К рецептам
         </button>
         <Feedback error={error} />
       </section>
@@ -271,10 +301,10 @@ export function ProductDetailPage({
     <section>
       <PageHeading
         title={product.name}
-        description="Рецепт, прямые затраты и итоговая себестоимость."
+        description="Состав рецепта, дополнительные затраты и себестоимость."
       >
         <button className={styles.buttonSecondary} onClick={onBack} type="button">
-          ← К продуктам
+          ← К рецептам
         </button>
       </PageHeading>
 
@@ -285,11 +315,11 @@ export function ProductDetailPage({
         onSubmit={(event) => void saveProductDetails(event)}
       >
         <div className={styles.formTitle}>
-          <h2>Параметры продукта</h2>
+          <h2>Параметры рецепта</h2>
         </div>
         <div className={styles.formGrid}>
           <label className={styles.field}>
-            <span>Название</span>
+            <span>Название рецепта</span>
             <input
               onChange={(event) =>
                 setProductDraft({ ...productDraft, name: event.currentTarget.value })
@@ -343,38 +373,37 @@ export function ProductDetailPage({
         <div className={styles.sectionTitle}>
           <div>
             <h2>Рецепт</h2>
-            <p>Количество и единицу можно задать отдельно для каждой строки.</p>
+            <p>Можно вводить новые продукты по названию; цена для расчёта необязательна.</p>
           </div>
         </div>
 
         <form className={styles.inlineForm} onSubmit={(event) => void saveRecipe(event)}>
           <label className={styles.field}>
-            <span>Ингредиент</span>
-            <select
+            <span>Продукт</span>
+            <input
+              list="available-products"
               onChange={(event) => {
-                const ingredientId = event.currentTarget.value
-                const ingredient = ingredients.find((item) => item.id === ingredientId)
+                const name = event.currentTarget.value
+                const ingredient = ingredients.find(
+                  (item) =>
+                    item.name.trim().toLocaleLowerCase() ===
+                    name.trim().toLocaleLowerCase(),
+                )
                 setRecipeDraft({
                   ...recipeDraft,
-                  ingredientId,
-                  quantityUnit: ingredient
-                    ? defaultRecipeUnit(ingredient.unit)
-                    : recipeDraft.quantityUnit,
+                  name,
+                  quantityUnit:
+                    ingredient &&
+                    !compatibleUnits(ingredient.unit).includes(
+                      recipeDraft.quantityUnit,
+                    )
+                      ? ingredient.unit
+                      : recipeDraft.quantityUnit,
                 })
               }}
               required
-              value={recipeDraft.ingredientId}
-            >
-              <option value="" disabled>
-                Выберите ингредиент
-              </option>
-              {ingredients.map((ingredient) => (
-                <option key={ingredient.id} value={ingredient.id}>
-                  {ingredient.name} · {formatCurrency(ingredient.pricePerUnit)}/
-                  {unitLabels[ingredient.unit]}
-                </option>
-              ))}
-            </select>
+              value={recipeDraft.name}
+            />
           </label>
           <label className={styles.field}>
             <span>Количество</span>
@@ -393,6 +422,26 @@ export function ProductDetailPage({
             />
           </label>
           <label className={styles.field}>
+            <span>Цена за единицу (необязательно)</span>
+            <input
+              min="0"
+              onChange={(event) =>
+                setRecipeDraft({
+                  ...recipeDraft,
+                  pricePerUnit: event.currentTarget.value,
+                })
+              }
+              placeholder={
+                selectedRecipeIngredient?.hasPrice
+                  ? formatNumber(selectedRecipeIngredient.pricePerUnit)
+                  : 'Не указана'
+              }
+              step="any"
+              type="number"
+              value={recipeDraft.pricePerUnit}
+            />
+          </label>
+          <label className={styles.field}>
             <span>Единица количества</span>
             <select
               onChange={(event) => {
@@ -403,11 +452,7 @@ export function ProductDetailPage({
               }}
               value={recipeDraft.quantityUnit}
             >
-              {compatibleUnits(
-                ingredients.find(
-                  (ingredient) => ingredient.id === recipeDraft.ingredientId,
-                )?.unit ?? recipeDraft.quantityUnit,
-              ).map((unit) => (
+              {recipeUnits.map((unit) => (
                 <option key={unit} value={unit}>
                   {unitLabels[unit]}
                 </option>
@@ -417,7 +462,6 @@ export function ProductDetailPage({
           <div className={styles.formActions}>
             <button
               className={styles.buttonPrimary}
-              disabled={ingredients.length === 0}
               type="submit"
             >
               {editingRecipeId ? 'Сохранить строку' : 'Добавить в рецепт'}
@@ -436,70 +480,88 @@ export function ProductDetailPage({
             )}
           </div>
         </form>
+        <datalist id="available-products">
+          {ingredients.map((ingredient) => (
+            <option key={ingredient.id} value={ingredient.name} />
+          ))}
+        </datalist>
 
         {recipeItems.length === 0 ? (
-          <p className={styles.mutedText}>В рецепте пока нет ингредиентов.</p>
+          <p className={styles.mutedText}>В рецепте пока нет продуктов.</p>
         ) : (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Ингредиент</th>
-                  <th scope="col">Количество</th>
-                  <th scope="col">Цена за единицу закупки</th>
-                  <th scope="col">Сумма</th>
-                  <th scope="col">
-                    <span className={styles.visuallyHidden}>Действия</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {recipeItems.map((item) => {
-                  const ingredient = ingredients.find(
-                    (entry) => entry.id === item.ingredientId,
-                  )
-                  if (!ingredient) return null
-                  return (
-                    <tr key={item.id}>
-                      <th scope="row">{ingredient.name}</th>
-                      <td>
-                        {formatNumber(item.quantity)} {unitLabels[item.quantityUnit]}
-                      </td>
-                      <td>
-                        {formatCurrency(ingredient.pricePerUnit)}/
-                        {unitLabels[ingredient.unit]}
-                      </td>
-                      <td>
-                        {formatCurrency(
-                          calculateIngredientCost(
-                            item.quantity,
-                            item.quantityUnit,
-                            ingredient,
-                          ),
-                        )}
-                      </td>
-                      <td className={styles.rowActions}>
-                        <button
-                          className={styles.textButton}
-                          onClick={() => editRecipe(item)}
-                          type="button"
-                        >
-                          Изменить
-                        </button>
-                        <button
-                          className={styles.textButtonDanger}
-                          onClick={() => void removeRecipeItem(item)}
-                          type="button"
-                        >
-                          Удалить
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Продукт</th>
+                    <th scope="col">Количество</th>
+                    <th scope="col">Цена за единицу закупки</th>
+                    <th scope="col">Сумма</th>
+                    <th scope="col">
+                      <span className={styles.visuallyHidden}>Действия</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recipeItems.map((item) => {
+                    const ingredient = ingredients.find(
+                      (entry) => entry.id === item.ingredientId,
+                    )
+                    if (!ingredient) return null
+                    return (
+                      <tr key={item.id}>
+                        <th scope="row">{ingredient.name}</th>
+                        <td>
+                          {formatNumber(item.quantity)} {unitLabels[item.quantityUnit]}
+                        </td>
+                        <td>
+                          {ingredient.hasPrice
+                            ? `${formatCurrency(ingredient.pricePerUnit)}/${unitLabels[ingredient.unit]}`
+                            : 'Не указана'}
+                        </td>
+                        <td>
+                          {formatCurrency(
+                            calculateIngredientCost(
+                              item.quantity,
+                              item.quantityUnit,
+                              ingredient,
+                            ),
+                          )}
+                        </td>
+                        <td className={styles.rowActions}>
+                          <button
+                            className={styles.textButton}
+                            onClick={() => editRecipe(item)}
+                            type="button"
+                          >
+                            Изменить
+                          </button>
+                          <button
+                            className={styles.textButtonDanger}
+                            onClick={() => void removeRecipeItem(item)}
+                            type="button"
+                          >
+                            Удалить
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {recipeItems.some(
+              (item) =>
+                !ingredients.find(
+                  (ingredient) => ingredient.id === item.ingredientId,
+                )?.hasPrice,
+            ) && (
+              <p className={styles.priceWarning}>
+                В себестоимость не включена стоимость продуктов без указанной цены.
+              </p>
+            )}
+          </>
         )}
       </section>
 
