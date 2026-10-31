@@ -215,6 +215,10 @@ function formatRemoteError(
     return `Таблица public.${table} не найдена в Supabase или кэш схемы устарел. Выполните supabase/schema.sql в SQL Editor проекта. Если таблица уже создана, обновите кэш командой NOTIFY pgrst, 'reload schema'; затем повторите синхронизацию.`
   }
 
+  if (error.code === 'PGRST204' || error.code === '42703') {
+    return `В таблице public.${table} не хватает столбцов для текущей версии приложения. Выполните актуальный supabase/schema.sql в SQL Editor проекта и повторите синхронизацию.`
+  }
+
   return `Не удалось ${action} ${table}: ${error.message}`
 }
 

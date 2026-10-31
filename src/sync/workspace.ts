@@ -22,11 +22,12 @@ export async function getWorkspaceId(code = getWorkspaceCode()): Promise<string>
   if (!normalizedCode) {
     throw new Error('Сначала укажите код рабочей области.')
   }
-  if (!globalThis.crypto?.subtle) {
+  const webCrypto = typeof crypto === 'undefined' ? undefined : crypto
+  if (!webCrypto?.subtle) {
     throw new Error('Для синхронизации требуется безопасный контекст с Web Crypto.')
   }
 
-  const digest = await globalThis.crypto.subtle.digest(
+  const digest = await webCrypto.subtle.digest(
     'SHA-256',
     new TextEncoder().encode(normalizedCode),
   )
