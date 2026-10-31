@@ -453,44 +453,114 @@
   box-shadow: 0 0 0 2px var(--primary-soft);
 }
 
-.themeSwatch {
+.themePreview {
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
+  border: 1px solid var(--border);
 }
 
-.colorPicker {
+.themePreviewlight {
+  background: #fff;
+}
+
+.themePreviewdark {
+  background: #252c38;
+}
+
+.accentSection {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1.15rem;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.customAccentSection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.accentChoices {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  max-width: 24rem;
-  margin-top: 1rem;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: 0.7rem;
-  color: var(--text);
-  background: var(--surface);
+  flex-wrap: wrap;
+  gap: 0.7rem;
 }
 
-.colorPicker span {
-  display: grid;
-  gap: 0.2rem;
+.accentSwatch,
+.customColorPicker {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
 }
 
-.colorPicker small {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.colorPicker input {
-  width: 3rem;
-  height: 2.5rem;
-  padding: 0.15rem;
-  border: 1px solid var(--input-border);
-  border-radius: 0.5rem;
-  background: var(--surface);
+.accentSwatch {
+  border: 2px solid var(--surface);
+  outline: 1px solid var(--border);
+  background: var(--swatch-color);
   cursor: pointer;
+}
+
+.accentSwatchActive {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.customColorChoice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.customColorLabel {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.customColorLabel strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.customColorLabel small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.customColorPicker {
+  overflow: hidden;
+  border: 1px solid var(--input-border);
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.customColorChoice:hover .customColorPicker {
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.customColorPicker:focus-visible {
+  outline: 3px solid var(--primary-soft);
+  outline-offset: 2px;
+}
+
+.customColorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.customColorPicker::-webkit-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+
+.customColorPicker::-moz-color-swatch {
+  border: 0;
+  border-radius: 50%;
 }
 
 .statusPill {

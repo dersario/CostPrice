@@ -131,7 +131,7 @@ async function fetchRemoteRows(
       .order('id', { ascending: true })
       .range(offset, offset + REMOTE_PAGE_SIZE - 1)
     if (error) {
-      throw new Error(`Не удалось загрузить ${remoteTables[entity]}: ${error.message}`)
+      throw new Error(formatRemoteError('загрузить', remoteTables[entity], error))
     }
 
     const page = (data ?? []) as RemoteRow[]
@@ -196,7 +196,7 @@ async function pushPendingChanges(
       .from(remoteTables[entity])
       .upsert(rows, { onConflict: 'workspace_id,id' })
     if (error) {
-      throw new Error(`Не удалось отправить ${remoteTables[entity]}: ${error.message}`)
+      throw new Error(formatRemoteError('отправить', remoteTables[entity], error))
     }
 
     await db.syncQueue.bulkDelete(acknowledgedOperationIds)
@@ -204,6 +204,18 @@ async function pushPendingChanges(
   }
 
   return pushed
+}
+
+function formatRemoteError(
+  action: 'загрузить' | 'отправить',
+  table: string,
+  error: { code?: string; message: string },
+): string {
+  if (error.code === 'PGRST205') {
+    return `Таблица public.${table} не найдена в Supabase или кэш схемы устарел. Выполните supabase/schema.sql в SQL Editor проекта. Если таблица уже создана, обновите кэш командой NOTIFY pgrst, 'reload schema'; затем повторите синхронизацию.`
+  }
+
+  return `Не удалось ${action} ${table}: ${error.message}`
 }
 
 function getLatestOperations(

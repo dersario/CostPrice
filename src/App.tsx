@@ -14,6 +14,13 @@ type Page = 'products' | 'recipes' | 'detail' | 'settings'
 const LAST_SYNC_KEY = 'recipe-cost.last-sync-at'
 const THEME_KEY = 'recipe-cost.color-theme'
 const ACCENT_KEY = 'recipe-cost.custom-accent'
+const LEGACY_ACCENTS: Record<string, string> = {
+  green: '#16834b',
+  blue: '#1769aa',
+  terracotta: '#c34b26',
+  violet: '#7040c0',
+  dark: '#a78bfa',
+}
 
 function App() {
   const [page, setPage] = useState<Page>('products')
@@ -23,7 +30,7 @@ function App() {
   const [syncError, setSyncError] = useState<string | null>(null)
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   const [queuedCount, setQueuedCount] = useState(0)
-  const [theme, setTheme] = useState<ColorTheme>('green')
+  const [theme, setTheme] = useState<ColorTheme>('light')
   const [customAccent, setCustomAccent] = useState<string | null>(null)
   const syncInProgress = useRef(false)
   const configured = isSupabaseConfigured()
@@ -45,8 +52,18 @@ function App() {
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem(THEME_KEY)
-      if (isColorTheme(savedTheme)) setTheme(savedTheme)
       const savedAccent = localStorage.getItem(ACCENT_KEY)
+      if (isColorTheme(savedTheme)) {
+        setTheme(savedTheme)
+      } else if (savedTheme && savedTheme !== 'light') {
+        setTheme('light')
+        localStorage.setItem(THEME_KEY, 'light')
+      }
+      const legacyAccent = savedTheme ? LEGACY_ACCENTS[savedTheme] : undefined
+      if (!savedAccent && legacyAccent) {
+        localStorage.setItem(ACCENT_KEY, legacyAccent)
+        setCustomAccent(legacyAccent)
+      }
       if (savedAccent && /^#[\da-f]{6}$/i.test(savedAccent)) {
         setCustomAccent(savedAccent)
       }

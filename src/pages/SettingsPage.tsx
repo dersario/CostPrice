@@ -8,7 +8,7 @@ import {
   getWorkspaceCode,
   setWorkspaceCode,
 } from '../sync/workspace'
-import { colorThemes, type ColorTheme } from '../lib/themes'
+import { accentColors, colorThemes, type ColorTheme } from '../lib/themes'
 import styles from './Pages.module.css'
 
 interface SettingsPageProps {
@@ -45,6 +45,7 @@ export function SettingsPage({
   const [queueCount, setQueueCount] = useState(queuedCount)
   const [error, setError] = useState<string | null>(null)
   const [themeError, setThemeError] = useState<string | null>(null)
+  const selectedAccent = customAccent ?? accentColors[0].color
 
   useEffect(() => {
     try {
@@ -112,8 +113,6 @@ export function SettingsPage({
   function selectTheme(nextTheme: ColorTheme): void {
     try {
       localStorage.setItem('recipe-cost.color-theme', nextTheme)
-      localStorage.removeItem('recipe-cost.custom-accent')
-      onCustomAccentChange(null)
       onThemeChange(nextTheme)
       setThemeError(null)
     } catch (caught) {
@@ -121,7 +120,7 @@ export function SettingsPage({
     }
   }
 
-  function selectCustomAccent(color: string): void {
+  function selectAccent(color: string): void {
     try {
       localStorage.setItem('recipe-cost.custom-accent', color)
       onCustomAccentChange(color)
@@ -160,7 +159,7 @@ export function SettingsPage({
             </p>
           </div>
         </div>
-        <div aria-label="Цветовая схема" className={styles.themeChoices} role="group">
+        <div aria-label="Тема оформления" className={styles.themeChoices} role="group">
           {colorThemes.map((option) => (
             <button
               aria-pressed={theme === option.id}
@@ -173,31 +172,47 @@ export function SettingsPage({
               onClick={() => selectTheme(option.id)}
               type="button"
             >
-              <span
-                aria-hidden="true"
-                className={styles.themeSwatch}
-                style={{ backgroundColor: option.primary }}
-              />
+              <span aria-hidden="true" className={`${styles.themePreview} ${styles[`themePreview${option.id}`]}`} />
               <span>{option.name}</span>
             </button>
           ))}
         </div>
-        <label className={styles.colorPicker}>
-          <span>
-            <strong>Свой цвет</strong>
-            <small>Выберите оттенок на цветовом круге</small>
-          </span>
-          <input
-            aria-label="Выбрать цвет акцента на цветовом круге"
-            onChange={(event) => selectCustomAccent(event.currentTarget.value)}
-            type="color"
-            value={
-              customAccent ??
-              colorThemes.find((option) => option.id === theme)?.primary ??
-              '#16834b'
-            }
-          />
-        </label>
+        <div className={styles.accentSection}>
+          <strong>Готовые цвета</strong>
+          <div aria-label="Цвет акцента" className={styles.accentChoices} role="group">
+            {accentColors.map((option) => (
+              <button
+                aria-label={option.name}
+                aria-pressed={selectedAccent === option.color}
+                className={
+                  selectedAccent === option.color
+                    ? `${styles.accentSwatch} ${styles.accentSwatchActive}`
+                    : styles.accentSwatch
+                }
+                key={option.color}
+                onClick={() => selectAccent(option.color)}
+                style={{ '--swatch-color': option.color } as React.CSSProperties}
+                title={option.name}
+                type="button"
+              />
+            ))}
+          </div>
+        </div>
+        <div className={styles.customAccentSection}>
+          <label className={styles.customColorChoice} title="Свой цвет">
+            <span className={styles.customColorLabel}>
+              <strong>Свой цвет</strong>
+              <small>Настроить вручную</small>
+            </span>
+            <input
+              aria-label="Выбрать свой цвет акцента"
+              className={styles.customColorPicker}
+              onChange={(event) => selectAccent(event.currentTarget.value)}
+              type="color"
+              value={customAccent ?? '#16834b'}
+            />
+          </label>
+        </div>
       </section>
 
       <div className={styles.settingsGrid}>
