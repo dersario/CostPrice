@@ -13,6 +13,7 @@ import {
 } from '../db/repository'
 import { calculateProductCost, type ProductCostBreakdown } from '../lib/cost'
 import { formatCurrency, formatNumber } from '../lib/format'
+import { createId } from '../lib/id'
 import {
   compatibleUnits,
   isMeasurementUnit,
@@ -145,7 +146,7 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
 
     try {
       const product = {
-        id: crypto.randomUUID(),
+        id: createId(),
         name: form.name.trim(),
         description: form.description.trim(),
         outputQuantity,
@@ -531,7 +532,7 @@ function messageOf(error: unknown, fallback: string): string {
 
 function newRecipeItem(): RecipeItemDraft {
   return {
-    id: crypto.randomUUID(),
+    id: createId(),
     name: '',
     quantity: '',
     quantityUnit: 'g',

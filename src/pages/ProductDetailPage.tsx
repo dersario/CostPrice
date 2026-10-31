@@ -20,6 +20,7 @@ import {
   type ProductCostBreakdown,
 } from '../lib/cost'
 import { formatCurrency, formatNumber } from '../lib/format'
+import { createId } from '../lib/id'
 import {
   compatibleUnits,
   isMeasurementUnit,
@@ -201,7 +202,7 @@ export function ProductDetailPage({
 
     try {
       await saveRecipeItem({
-        id: editingRecipeId ?? crypto.randomUUID(),
+        id: editingRecipeId ?? createId(),
         productId: product.id,
         ingredientName: recipeDraft.name.trim(),
         quantity,
@@ -255,7 +256,7 @@ export function ProductDetailPage({
 
     try {
       await saveDirectCost({
-        id: editingDirectCostId ?? crypto.randomUUID(),
+        id: editingDirectCostId ?? createId(),
         productId: product.id,
         name: directCostDraft.name.trim(),
         amount,

@@ -7,6 +7,7 @@ import type {
   SyncEntity,
   SyncOperationType,
 } from '../types'
+import { createId } from '../lib/id'
 import { compatibleUnits, convertQuantity } from '../lib/units'
 
 type NewRecord<T extends { updatedAt: string }> = Omit<T, 'updatedAt'>
@@ -358,7 +359,7 @@ async function findOrCreateIngredient(
   if (!existing) {
     const now = new Date().toISOString()
     const ingredient: Ingredient = {
-      id: crypto.randomUUID(),
+      id: createId(),
       name: name.trim(),
       unit,
       purchaseQuantity: 1,

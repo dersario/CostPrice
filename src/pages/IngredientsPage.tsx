@@ -4,6 +4,7 @@ import { PageHeading } from '../components/PageHeading'
 import { UnitSelect } from '../components/UnitSelect'
 import { deleteIngredient, listIngredients, saveIngredient } from '../db/repository'
 import { formatCurrency, formatNumber } from '../lib/format'
+import { createId } from '../lib/id'
 import { unitLabels } from '../lib/units'
 import type { Ingredient, MeasurementUnit } from '../types'
 import styles from './Pages.module.css'
@@ -83,7 +84,7 @@ export function IngredientsPage() {
 
     try {
       await saveIngredient({
-        id: editingId ?? crypto.randomUUID(),
+        id: editingId ?? createId(),
         name: form.name.trim(),
         unit: form.unit,
         purchaseQuantity: quantity,
