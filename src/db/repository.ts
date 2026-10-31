@@ -100,6 +100,7 @@ export async function getProduct(id: string): Promise<Product | undefined> {
 export async function saveProduct(input: NewRecord<Product>): Promise<Product> {
   assertName(input.name, 'продукта')
   assertPositive(input.outputQuantity, 'Количество готовой продукции')
+  validateMarkup(input.markupType, input.markupValue)
 
   return db.transaction('rw', db.products, db.syncQueue, async () => {
     const previous = await db.products.get(input.id)
@@ -116,6 +117,7 @@ export async function createProductWithRecipe(
 ): Promise<Product> {
   assertName(input.name, 'продукта')
   assertPositive(input.outputQuantity, 'Количество готовой продукции')
+  validateMarkup(input.markupType, input.markupValue)
   for (const item of recipeItems) {
     validateRecipeLine(item)
   }
@@ -325,6 +327,13 @@ function assertPositive(value: number, label: string): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${label} должно быть больше нуля.`)
   }
+}
+
+function validateMarkup(type: Product['markupType'], value: number): void {
+  if (type !== 'absolute' && type !== 'percentage') {
+    throw new Error('Выберите тип наценки.')
+  }
+  assertNonNegative(value, 'Наценка')
 }
 
 function validateRecipeLine(input: RecipeLineInput): void {

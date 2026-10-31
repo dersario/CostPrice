@@ -359,6 +359,8 @@ function serializeRecord(
         description: record.description,
         output_quantity: record.outputQuantity,
         output_unit: record.outputUnit,
+        markup_type: record.markupType,
+        markup_value: record.markupValue,
       }
     case 'recipeItems':
       if (!isRecipeItem(record)) throw new Error('Неверные данные строки рецепта.')
@@ -414,6 +416,8 @@ function serializeTombstone(
         description: null,
         output_quantity: null,
         output_unit: null,
+        markup_type: 'absolute',
+        markup_value: 0,
       }
     case 'recipeItems':
       return {
@@ -471,6 +475,11 @@ function decodeRemoteRow(entity: SyncEntity, value: RemoteRow): RemoteEntry {
         description: requireString(value.description, 'description'),
         outputQuantity: requireNumber(value.output_quantity, 'output_quantity'),
         outputUnit: requireUnit(value.output_unit),
+        markupType: requireMarkupType(value.markup_type),
+        markupValue:
+          value.markup_value === undefined
+            ? 0
+            : requireNumber(value.markup_value, 'markup_value'),
       }
       break
     case 'recipeItems':
@@ -583,6 +592,12 @@ function requireBoolean(value: unknown, field: string): boolean {
 function requireUnit(value: unknown): Ingredient['unit'] {
   if (isMeasurementUnit(value)) return value
   throw new Error('Некорректная единица измерения в данных синхронизации.')
+}
+
+function requireMarkupType(value: unknown): Product['markupType'] {
+  if (value === undefined || value === null) return 'absolute'
+  if (value === 'absolute' || value === 'percentage') return value
+  throw new Error('Некорректный тип наценки в данных синхронизации.')
 }
 
 function isIngredient(record: SyncRecord): record is Ingredient {

@@ -12,6 +12,8 @@ export interface ProductCostBreakdown {
   overhead: number
   total: number
   perUnit: number
+  markupPerUnit: number
+  sellingPricePerUnit: number
 }
 
 export function calculateIngredientCost(
@@ -68,13 +70,20 @@ export function calculateProductCost(
   const labor = sumDirectCosts(productDirectCosts, 'labor')
   const overhead = sumDirectCosts(productDirectCosts, 'overhead')
   const total = materials + labor + overhead
+  const perUnit = total / product.outputQuantity
+  const markupPerUnit =
+    product.markupType === 'percentage'
+      ? perUnit * (product.markupValue / 100)
+      : product.markupValue
 
   return {
     materials,
     labor,
     overhead,
     total,
-    perUnit: total / product.outputQuantity,
+    perUnit,
+    markupPerUnit,
+    sellingPricePerUnit: perUnit + markupPerUnit,
   }
 }
 

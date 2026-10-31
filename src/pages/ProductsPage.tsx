@@ -19,7 +19,7 @@ import {
   measurementUnits,
   unitLabels,
 } from '../lib/units'
-import type { Ingredient, MeasurementUnit, Product } from '../types'
+import type { Ingredient, MarkupType, MeasurementUnit, Product } from '../types'
 import styles from './Pages.module.css'
 
 interface RecipeItemDraft {
@@ -35,6 +35,8 @@ interface ProductForm {
   description: string
   outputQuantity: string
   outputUnit: MeasurementUnit
+  markupType: MarkupType
+  markupValue: string
   recipeItems: RecipeItemDraft[]
 }
 
@@ -49,6 +51,8 @@ const emptyForm: ProductForm = {
   description: '',
   outputQuantity: '1',
   outputUnit: 'pcs',
+  markupType: 'absolute',
+  markupValue: '0',
   recipeItems: [],
 }
 
@@ -114,6 +118,11 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
       setError('Количество на выходе должно быть больше нуля.')
       return
     }
+    const markupValue = Number(form.markupValue)
+    if (!Number.isFinite(markupValue) || markupValue < 0) {
+      setError('Наценка должна быть неотрицательным числом.')
+      return
+    }
     for (const item of form.recipeItems) {
       if (!item.name.trim()) {
         setError('Укажите название продукта для каждой строки рецепта.')
@@ -141,6 +150,8 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
         description: form.description.trim(),
         outputQuantity,
         outputUnit: form.outputUnit,
+        markupType: form.markupType,
+        markupValue,
       }
       await createProductWithRecipe(
         product,
@@ -238,6 +249,39 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
               onChange={(outputUnit) => setForm({ ...form, outputUnit })}
               value={form.outputUnit}
             />
+            <label className={styles.field}>
+              <span>Тип наценки</span>
+              <select
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    markupType:
+                      event.currentTarget.value === 'percentage'
+                        ? 'percentage'
+                        : 'absolute',
+                  })
+                }
+                value={form.markupType}
+              >
+                <option value="absolute">Фиксированная сумма</option>
+                <option value="percentage">Процент от себестоимости</option>
+              </select>
+            </label>
+            <label className={styles.field}>
+              <span>
+                Наценка {form.markupType === 'percentage' ? '(%)' : '(на единицу)'}
+              </span>
+              <input
+                min="0"
+                onChange={(event) =>
+                  setForm({ ...form, markupValue: event.currentTarget.value })
+                }
+                required
+                step="any"
+                type="number"
+                value={form.markupValue}
+              />
+            </label>
           </div>
           <div className={styles.recipeDraftSection}>
             <div className={styles.sectionTitle}>
@@ -420,7 +464,8 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
               <tr>
                 <th className={styles.recipeNameColumn} scope="col">Рецепт</th>
                 <th scope="col">Себестоимость</th>
-                <th scope="col">На единицу</th>
+                <th scope="col">Себестоимость за единицу</th>
+                <th scope="col">Цена продажи за единицу</th>
                 <th scope="col">
                   <span className={styles.visuallyHidden}>Действия</span>
                 </th>
@@ -449,6 +494,7 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
                   </th>
                   <td>{formatCurrency(cost.total)}</td>
                   <td>{formatCurrency(cost.perUnit)}</td>
+                  <td>{formatCurrency(cost.sellingPricePerUnit)}</td>
                   <td className={styles.tableRowActions}>
                     <div className={styles.rowActionStack}>
                       <button

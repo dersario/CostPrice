@@ -54,6 +54,21 @@ export class AppDatabase extends Dexie {
           ingredient.hasPrice = true
         })
       })
+
+    this.version(4)
+      .stores({
+        ingredients: '&id, name, updatedAt',
+        products: '&id, name, updatedAt',
+        recipeItems: '&id, productId, ingredientId, updatedAt',
+        directCosts: '&id, productId, category, updatedAt',
+        syncQueue: '++id, queuedAt, [entity+entityId]',
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table('products').toCollection().modify((product) => {
+          product.markupType ??= 'absolute'
+          product.markupValue ??= 0
+        })
+      })
   }
 }
 

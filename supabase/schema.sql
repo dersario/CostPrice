@@ -42,6 +42,9 @@ create table if not exists public.products (
   description text,
   output_quantity numeric check (output_quantity > 0),
   output_unit text check (output_unit in ('g', 'kg', 'ml', 'l', 'pcs')),
+  markup_type text not null default 'absolute'
+    check (markup_type in ('absolute', 'percentage')),
+  markup_value numeric not null default 0 check (markup_value >= 0),
   updated_at timestamptz(3) not null,
   is_deleted boolean not null default false,
   primary key (workspace_id, id),
@@ -56,6 +59,13 @@ create table if not exists public.products (
     )
   )
 );
+
+alter table public.products
+  add column if not exists markup_type text not null default 'absolute'
+  check (markup_type in ('absolute', 'percentage'));
+alter table public.products
+  add column if not exists markup_value numeric not null default 0
+  check (markup_value >= 0);
 
 create table if not exists public.recipe_items (
   workspace_id text not null check (workspace_id ~ '^[0-9a-f]{32}$'),

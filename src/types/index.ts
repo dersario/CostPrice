@@ -1,6 +1,7 @@
 export type MeasurementUnit = 'g' | 'kg' | 'ml' | 'l' | 'pcs'
 
 export type DirectCostCategory = 'labor' | 'overhead'
+export type MarkupType = 'absolute' | 'percentage'
 
 export interface Ingredient {
   id: string
@@ -19,6 +20,8 @@ export interface Product {
   description: string
   outputQuantity: number
   outputUnit: MeasurementUnit
+  markupType: MarkupType
+  markupValue: number
   updatedAt: string
 }
 

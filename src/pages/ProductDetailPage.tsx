@@ -30,6 +30,7 @@ import type {
   DirectCost,
   DirectCostCategory,
   Ingredient,
+  MarkupType,
   MeasurementUnit,
   Product,
   RecipeItem,
@@ -46,6 +47,8 @@ interface ProductDraft {
   description: string
   outputQuantity: string
   outputUnit: MeasurementUnit
+  markupType: MarkupType
+  markupValue: string
 }
 
 interface RecipeDraft {
@@ -118,6 +121,8 @@ export function ProductDetailPage({
         description: nextProduct.description,
         outputQuantity: String(nextProduct.outputQuantity),
         outputUnit: nextProduct.outputUnit,
+        markupType: nextProduct.markupType,
+        markupValue: String(nextProduct.markupValue),
       })
       setCost(
         calculateProductCost(
@@ -148,6 +153,11 @@ export function ProductDetailPage({
       setError('Количество на выходе должно быть больше нуля.')
       return
     }
+    const markupValue = Number(productDraft.markupValue)
+    if (!Number.isFinite(markupValue) || markupValue < 0) {
+      setError('Наценка должна быть неотрицательным числом.')
+      return
+    }
 
     try {
       await saveProduct({
@@ -156,6 +166,8 @@ export function ProductDetailPage({
         description: productDraft.description.trim(),
         outputQuantity,
         outputUnit: productDraft.outputUnit,
+        markupType: productDraft.markupType,
+        markupValue,
       })
       await refresh()
     } catch (caught) {
@@ -362,6 +374,42 @@ export function ProductDetailPage({
             onChange={(outputUnit) => setProductDraft({ ...productDraft, outputUnit })}
             value={productDraft.outputUnit}
           />
+          <label className={styles.field}>
+            <span>Тип наценки</span>
+            <select
+              onChange={(event) =>
+                setProductDraft({
+                  ...productDraft,
+                  markupType:
+                    event.currentTarget.value === 'percentage'
+                      ? 'percentage'
+                      : 'absolute',
+                })
+              }
+              value={productDraft.markupType}
+            >
+              <option value="absolute">Фиксированная сумма</option>
+              <option value="percentage">Процент от себестоимости</option>
+            </select>
+          </label>
+          <label className={styles.field}>
+            <span>
+              Наценка {productDraft.markupType === 'percentage' ? '(%)' : '(на единицу)'}
+            </span>
+            <input
+              min="0"
+              onChange={(event) =>
+                setProductDraft({
+                  ...productDraft,
+                  markupValue: event.currentTarget.value,
+                })
+              }
+              required
+              step="any"
+              type="number"
+              value={productDraft.markupValue}
+            />
+          </label>
         </div>
         <div className={styles.formActions}>
           <button className={styles.buttonSecondary} type="submit">
@@ -689,9 +737,22 @@ export function ProductDetailPage({
             </div>
             <div className={styles.summaryPerUnit}>
               <dt>
-                На единицу ({unitLabels[product.outputUnit]})
+                Себестоимость за единицу ({unitLabels[product.outputUnit]})
               </dt>
               <dd>{formatCurrency(cost.perUnit)}</dd>
+            </div>
+            <div>
+              <dt>
+                Наценка
+                {product.markupType === 'percentage'
+                  ? ` (${formatNumber(product.markupValue)}%)`
+                  : ''}
+              </dt>
+              <dd>{formatCurrency(cost.markupPerUnit)} за единицу</dd>
+            </div>
+            <div className={styles.summaryPerUnit}>
+              <dt>Цена продажи за единицу</dt>
+              <dd>{formatCurrency(cost.sellingPricePerUnit)}</dd>
             </div>
           </dl>
         </section>
