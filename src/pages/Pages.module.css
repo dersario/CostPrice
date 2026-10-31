@@ -3,7 +3,8 @@
 .textButton,
 .textButtonDanger,
 .iconButton,
-.productLink {
+.productLink,
+.editRecipeButton {
   border: 0;
   font: inherit;
   cursor: pointer;
@@ -269,6 +270,25 @@
   text-decoration: underline;
 }
 
+.editRecipeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.55rem;
+  color: var(--primary);
+  background: var(--surface);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.editRecipeButton:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
 .rowSubtitle {
   display: block;
   margin-top: 0.3rem;
@@ -437,6 +457,40 @@
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
+}
+
+.colorPicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 24rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.colorPicker span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.colorPicker small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.colorPicker input {
+  width: 3rem;
+  height: 2.5rem;
+  padding: 0.15rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  cursor: pointer;
 }
 
 .statusPill {

@@ -13,6 +13,7 @@ type Page = 'products' | 'recipes' | 'detail' | 'settings'
 
 const LAST_SYNC_KEY = 'recipe-cost.last-sync-at'
 const THEME_KEY = 'recipe-cost.color-theme'
+const ACCENT_KEY = 'recipe-cost.custom-accent'
 
 function App() {
   const [page, setPage] = useState<Page>('products')
@@ -23,6 +24,7 @@ function App() {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   const [queuedCount, setQueuedCount] = useState(0)
   const [theme, setTheme] = useState<ColorTheme>('green')
+  const [customAccent, setCustomAccent] = useState<string | null>(null)
   const syncInProgress = useRef(false)
   const configured = isSupabaseConfigured()
 
@@ -44,14 +46,45 @@ function App() {
     try {
       const savedTheme = localStorage.getItem(THEME_KEY)
       if (isColorTheme(savedTheme)) setTheme(savedTheme)
+      const savedAccent = localStorage.getItem(ACCENT_KEY)
+      if (savedAccent && /^#[\da-f]{6}$/i.test(savedAccent)) {
+        setCustomAccent(savedAccent)
+      }
     } catch (error) {
-      setSyncError(messageOf(error, 'Не удалось прочитать цветовую схему.'))
+      setSyncError(messageOf(error, 'Не удалось прочитать настройки оформления.'))
     }
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
+    const root = document.documentElement
+    root.dataset.theme = theme
+    if (customAccent) {
+      root.style.setProperty('--primary', customAccent)
+      root.style.setProperty('--primary-contrast', getContrastColor(customAccent))
+      root.style.setProperty(
+        '--primary-hover',
+        `color-mix(in srgb, ${customAccent} 82%, #000)`,
+      )
+      root.style.setProperty(
+        '--primary-soft',
+        `color-mix(in srgb, ${customAccent} 16%, var(--surface))`,
+      )
+      root.style.setProperty(
+        '--accent-soft',
+        `color-mix(in srgb, ${customAccent} 20%, var(--surface))`,
+      )
+    } else {
+      for (const property of [
+        '--primary',
+        '--primary-contrast',
+        '--primary-hover',
+        '--primary-soft',
+        '--accent-soft',
+      ]) {
+        root.style.removeProperty(property)
+      }
+    }
+  }, [theme, customAccent])
 
   function changeTheme(nextTheme: ColorTheme): void {
     setTheme(nextTheme)
@@ -177,11 +210,27 @@ function App() {
             syncing={syncing}
             theme={theme}
             onThemeChange={changeTheme}
+            customAccent={customAccent}
+            onCustomAccentChange={setCustomAccent}
           />
         )}
       </main>
     </div>
   )
+}
+
+function getContrastColor(hex: string): string {
+  const channels = hex
+    .slice(1)
+    .match(/.{2}/g)
+    ?.map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+    )
+  if (!channels) return '#fff'
+  const luminance =
+    0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+  return luminance > 0.42 ? '#17211a' : '#fff'
 }
 
 function messageOf(error: unknown, fallback: string): string {

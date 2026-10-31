@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Feedback } from '../components/Feedback'
+import { IngredientAutocomplete } from '../components/IngredientAutocomplete'
 import { PageHeading } from '../components/PageHeading'
 import { UnitSelect } from '../components/UnitSelect'
 import {
@@ -9,7 +10,6 @@ import {
   listAllRecipeItems,
   listIngredients,
   listProducts,
-  saveProduct,
 } from '../db/repository'
 import { calculateProductCost, type ProductCostBreakdown } from '../lib/cost'
 import { formatCurrency, formatNumber } from '../lib/format'
@@ -60,7 +60,6 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
   const [rows, setRows] = useState<ProductRow[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [form, setForm] = useState<ProductForm>(emptyForm)
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -100,23 +99,9 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
   }, [])
 
   function startCreate(): void {
-    setEditingId(null)
     setForm({
       ...emptyForm,
       recipeItems: [newRecipeItem()],
-    })
-    setIsFormOpen(true)
-    setError(null)
-  }
-
-  function startEdit(product: Product): void {
-    setEditingId(product.id)
-    setForm({
-      name: product.name,
-      description: product.description,
-      outputQuantity: String(product.outputQuantity),
-      outputUnit: product.outputUnit,
-      recipeItems: [],
     })
     setIsFormOpen(true)
     setError(null)
@@ -151,29 +136,24 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
 
     try {
       const product = {
-        id: editingId ?? crypto.randomUUID(),
+        id: crypto.randomUUID(),
         name: form.name.trim(),
         description: form.description.trim(),
         outputQuantity,
         outputUnit: form.outputUnit,
       }
-      if (editingId) {
-        await saveProduct(product)
-      } else {
-        await createProductWithRecipe(
-          product,
-          form.recipeItems.map((item) => ({
-            id: item.id,
-            ingredientName: item.name.trim(),
-            quantity: Number(item.quantity),
-            quantityUnit: item.quantityUnit,
-            pricePerUnit:
-              item.pricePerUnit.trim() === '' ? null : Number(item.pricePerUnit),
-          })),
-        )
-      }
+      await createProductWithRecipe(
+        product,
+        form.recipeItems.map((item) => ({
+          id: item.id,
+          ingredientName: item.name.trim(),
+          quantity: Number(item.quantity),
+          quantityUnit: item.quantityUnit,
+          pricePerUnit:
+            item.pricePerUnit.trim() === '' ? null : Number(item.pricePerUnit),
+        })),
+      )
       setIsFormOpen(false)
-      setEditingId(null)
       setForm({ ...emptyForm, recipeItems: [] })
       setError(null)
       await refresh()
@@ -209,7 +189,7 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
       {isFormOpen && (
         <form className={styles.formCard} onSubmit={(event) => void submit(event)}>
           <div className={styles.formTitle}>
-            <h2>{editingId ? 'Изменить рецепт' : 'Новый рецепт'}</h2>
+            <h2>Новый рецепт</h2>
             <button
               aria-label="Закрыть форму"
               className={styles.iconButton}
@@ -259,165 +239,163 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
               value={form.outputUnit}
             />
           </div>
-          {!editingId && (
-            <div className={styles.recipeDraftSection}>
-              <div className={styles.sectionTitle}>
-                <div>
-                  <h2>Продукты и количество</h2>
-                  <p>Введите названия и количество. Цену можно указать сейчас или позже.</p>
-                </div>
-                <button
-                  className={styles.buttonSecondary}
-                  onClick={() => {
-                    setForm({
-                      ...form,
-                      recipeItems: [...form.recipeItems, newRecipeItem()],
-                    })
-                  }}
-                  type="button"
-                >
-                  Добавить продукт
-                </button>
+          <div className={styles.recipeDraftSection}>
+            <div className={styles.sectionTitle}>
+              <div>
+                <h2>Продукты и количество</h2>
+                <p>Введите названия и количество. Цену можно указать сейчас или позже.</p>
               </div>
-              {form.recipeItems.map((item, index) => {
-                  const ingredient = ingredients.find(
-                    (entry) =>
-                      entry.name.trim().toLocaleLowerCase() ===
-                      item.name.trim().toLocaleLowerCase(),
-                  )
-                  const units = ingredient
-                    ? compatibleUnits(ingredient.unit)
-                    : measurementUnits
-                  return (
-                    <div className={styles.recipeDraftRow} key={item.id}>
-                      <label className={styles.field}>
-                        <span>Продукт</span>
-                        <input
-                          list="available-products"
-                          onChange={(event) => {
-                            const name = event.currentTarget.value
-                            const selected = ingredients.find(
-                              (entry) =>
-                                entry.name.trim().toLocaleLowerCase() ===
-                                name.trim().toLocaleLowerCase(),
-                            )
-                            setForm({
-                              ...form,
-                              recipeItems: form.recipeItems.map((draft, rowIndex) =>
-                                rowIndex === index
-                                  ? {
-                                      ...draft,
-                                      name,
-                                      quantityUnit:
-                                        selected &&
-                                        !compatibleUnits(selected.unit).includes(
-                                          draft.quantityUnit,
-                                        )
-                                          ? selected.unit
-                                          : draft.quantityUnit,
-                                    }
-                                  : draft,
-                              ),
-                            })
-                          }}
-                          required
-                          value={item.name}
-                        />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Количество</span>
-                        <input
-                          min="0"
-                          onChange={(event) =>
-                            setForm({
-                              ...form,
-                              recipeItems: form.recipeItems.map((draft, rowIndex) =>
-                                rowIndex === index
-                                  ? { ...draft, quantity: event.currentTarget.value }
-                                  : draft,
-                              ),
-                            })
-                          }
-                          required
-                          step="any"
-                          type="number"
-                          value={item.quantity}
-                        />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Цена за единицу (необязательно)</span>
-                        <input
-                          min="0"
-                          onChange={(event) =>
-                            setForm({
-                              ...form,
-                              recipeItems: form.recipeItems.map((draft, rowIndex) =>
-                                rowIndex === index
-                                  ? {
-                                      ...draft,
-                                      pricePerUnit: event.currentTarget.value,
-                                    }
-                                  : draft,
-                              ),
-                            })
-                          }
-                          placeholder={
-                            ingredient?.hasPrice
-                              ? formatNumber(ingredient.pricePerUnit)
-                              : 'Не указана'
-                          }
-                          step="any"
-                          type="number"
-                          value={item.pricePerUnit}
-                        />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Единица количества</span>
-                        <select
-                          onChange={(event) => {
-                            const unit = event.currentTarget.value
-                            if (!isMeasurementUnit(unit)) return
-                            setForm({
-                              ...form,
-                              recipeItems: form.recipeItems.map((draft, rowIndex) =>
-                                rowIndex === index
-                                  ? { ...draft, quantityUnit: unit }
-                                  : draft,
-                              ),
-                            })
-                          }}
-                          value={item.quantityUnit}
-                        >
-                          {units.map((unit) => (
-                            <option key={unit} value={unit}>
-                              {unitLabels[unit]}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <button
-                        aria-label={`Удалить продукт из рецепта: ${ingredient?.name ?? ''}`}
-                        className={styles.textButtonDanger}
-                        onClick={() =>
-                          setForm({
-                            ...form,
-                            recipeItems: form.recipeItems.filter(
-                              (draft) => draft.id !== item.id,
-                            ),
-                          })
-                        }
-                        type="button"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  )
-                })}
+              <button
+                className={styles.buttonSecondary}
+                onClick={() => {
+                  setForm({
+                    ...form,
+                    recipeItems: [...form.recipeItems, newRecipeItem()],
+                  })
+                }}
+                type="button"
+              >
+                Добавить продукт
+              </button>
             </div>
-          )}
+            {form.recipeItems.map((item, index) => {
+              const ingredient = ingredients.find(
+                (entry) =>
+                  entry.name.trim().toLocaleLowerCase() ===
+                  item.name.trim().toLocaleLowerCase(),
+              )
+              const units = ingredient
+                ? compatibleUnits(ingredient.unit)
+                : measurementUnits
+              return (
+                <div className={styles.recipeDraftRow} key={item.id}>
+                  <label className={styles.field}>
+                    <span>Продукт</span>
+                    <IngredientAutocomplete
+                      id={`recipe-ingredient-${item.id}`}
+                      ingredients={ingredients}
+                      onChange={(name) => {
+                        const selected = ingredients.find(
+                          (entry) =>
+                            entry.name.trim().toLocaleLowerCase() ===
+                            name.trim().toLocaleLowerCase(),
+                        )
+                        setForm({
+                          ...form,
+                          recipeItems: form.recipeItems.map((draft, rowIndex) =>
+                            rowIndex === index
+                              ? {
+                                  ...draft,
+                                  name,
+                                  quantityUnit:
+                                    selected &&
+                                    !compatibleUnits(selected.unit).includes(
+                                      draft.quantityUnit,
+                                    )
+                                      ? selected.unit
+                                      : draft.quantityUnit,
+                                }
+                              : draft,
+                          ),
+                        })
+                      }}
+                      required
+                      value={item.name}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Количество</span>
+                    <input
+                      min="0"
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          recipeItems: form.recipeItems.map((draft, rowIndex) =>
+                            rowIndex === index
+                              ? { ...draft, quantity: event.currentTarget.value }
+                              : draft,
+                          ),
+                        })
+                      }
+                      required
+                      step="any"
+                      type="number"
+                      value={item.quantity}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Цена за единицу (необязательно)</span>
+                    <input
+                      min="0"
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          recipeItems: form.recipeItems.map((draft, rowIndex) =>
+                            rowIndex === index
+                              ? {
+                                  ...draft,
+                                  pricePerUnit: event.currentTarget.value,
+                                }
+                              : draft,
+                          ),
+                        })
+                      }
+                      placeholder={
+                        ingredient?.hasPrice
+                          ? formatNumber(ingredient.pricePerUnit)
+                          : 'Не указана'
+                      }
+                      step="any"
+                      type="number"
+                      value={item.pricePerUnit}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Единица количества</span>
+                    <select
+                      onChange={(event) => {
+                        const unit = event.currentTarget.value
+                        if (!isMeasurementUnit(unit)) return
+                        setForm({
+                          ...form,
+                          recipeItems: form.recipeItems.map((draft, rowIndex) =>
+                            rowIndex === index
+                              ? { ...draft, quantityUnit: unit }
+                              : draft,
+                          ),
+                        })
+                      }}
+                      value={item.quantityUnit}
+                    >
+                      {units.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unitLabels[unit]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    aria-label={`Удалить продукт из рецепта: ${ingredient?.name ?? ''}`}
+                    className={styles.textButtonDanger}
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        recipeItems: form.recipeItems.filter(
+                          (draft) => draft.id !== item.id,
+                        ),
+                      })
+                    }
+                    type="button"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              )
+            })}
+          </div>
           <div className={styles.formActions}>
             <button className={styles.buttonPrimary} type="submit">
-              {editingId ? 'Сохранить' : 'Создать рецепт'}
+              Создать рецепт
             </button>
             <button
               className={styles.buttonSecondary}
@@ -473,11 +451,13 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
                   <td>{formatCurrency(cost.perUnit)}</td>
                   <td className={styles.rowActions}>
                     <button
-                      className={styles.textButton}
-                      onClick={() => startEdit(product)}
+                      aria-label={`Редактировать рецепт: ${product.name}`}
+                      className={styles.editRecipeButton}
+                      onClick={() => onOpenProduct(product.id)}
                       type="button"
                     >
-                      Изменить
+                      <span aria-hidden="true">✎</span>
+                      Редактировать рецепт
                     </button>
                     <button
                       className={styles.textButtonDanger}
@@ -493,11 +473,6 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
           </table>
         </div>
       )}
-      <datalist id="available-products">
-        {ingredients.map((ingredient) => (
-          <option key={ingredient.id} value={ingredient.name} />
-        ))}
-      </datalist>
     </section>
   )
 }

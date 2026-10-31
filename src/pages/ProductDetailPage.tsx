@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Feedback } from '../components/Feedback'
+import { IngredientAutocomplete } from '../components/IngredientAutocomplete'
 import { PageHeading } from '../components/PageHeading'
 import { UnitSelect } from '../components/UnitSelect'
 import {
@@ -380,10 +381,10 @@ export function ProductDetailPage({
         <form className={styles.inlineForm} onSubmit={(event) => void saveRecipe(event)}>
           <label className={styles.field}>
             <span>Продукт</span>
-            <input
-              list="available-products"
-              onChange={(event) => {
-                const name = event.currentTarget.value
+            <IngredientAutocomplete
+              id={`recipe-ingredient-${productId}`}
+              ingredients={ingredients}
+              onChange={(name) => {
                 const ingredient = ingredients.find(
                   (item) =>
                     item.name.trim().toLocaleLowerCase() ===
@@ -480,12 +481,6 @@ export function ProductDetailPage({
             )}
           </div>
         </form>
-        <datalist id="available-products">
-          {ingredients.map((ingredient) => (
-            <option key={ingredient.id} value={ingredient.name} />
-          ))}
-        </datalist>
-
         {recipeItems.length === 0 ? (
           <p className={styles.mutedText}>В рецепте пока нет продуктов.</p>
         ) : (

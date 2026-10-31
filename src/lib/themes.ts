@@ -1,4 +1,5 @@
 export const colorThemes = [
+  { id: 'light', name: 'Светлая', primary: '#16834b', surface: '#eff8f2' },
   { id: 'green', name: 'Зелёная', primary: '#16834b', surface: '#eff8f2' },
   { id: 'blue', name: 'Синяя', primary: '#1769aa', surface: '#edf5fc' },
   { id: 'terracotta', name: 'Коралловая', primary: '#c34b26', surface: '#fff2ec' },

@@ -22,6 +22,8 @@ interface SettingsPageProps {
   onSyncNow: () => Promise<void>
   theme: ColorTheme
   onThemeChange: (theme: ColorTheme) => void
+  customAccent: string | null
+  onCustomAccentChange: (color: string | null) => void
 }
 
 export function SettingsPage({
@@ -35,6 +37,8 @@ export function SettingsPage({
   onSyncNow,
   theme,
   onThemeChange,
+  customAccent,
+  onCustomAccentChange,
 }: SettingsPageProps) {
   const [workspaceCode, setCode] = useState('')
   const [online, setOnline] = useState(navigator.onLine)
@@ -108,10 +112,22 @@ export function SettingsPage({
   function selectTheme(nextTheme: ColorTheme): void {
     try {
       localStorage.setItem('recipe-cost.color-theme', nextTheme)
+      localStorage.removeItem('recipe-cost.custom-accent')
+      onCustomAccentChange(null)
       onThemeChange(nextTheme)
       setThemeError(null)
     } catch (caught) {
       setThemeError(messageOf(caught, 'Не удалось сохранить цветовую схему.'))
+    }
+  }
+
+  function selectCustomAccent(color: string): void {
+    try {
+      localStorage.setItem('recipe-cost.custom-accent', color)
+      onCustomAccentChange(color)
+      setThemeError(null)
+    } catch (caught) {
+      setThemeError(messageOf(caught, 'Не удалось сохранить цветовой акцент.'))
     }
   }
 
@@ -137,8 +153,11 @@ export function SettingsPage({
       <section className={styles.settingsCard + ' ' + styles.themeCard}>
         <div className={styles.sectionTitle}>
           <div>
-            <h2>Цветовая схема</h2>
-            <p>Выберите оформление приложения. Выбор сохранится в этом браузере.</p>
+            <h2>Тема и цветовая палитра</h2>
+            <p>
+              Выберите светлое или тёмное оформление и настройте цвет акцента.
+              Настройки сохраняются в этом браузере.
+            </p>
           </div>
         </div>
         <div aria-label="Цветовая схема" className={styles.themeChoices} role="group">
@@ -163,6 +182,22 @@ export function SettingsPage({
             </button>
           ))}
         </div>
+        <label className={styles.colorPicker}>
+          <span>
+            <strong>Свой цвет</strong>
+            <small>Выберите оттенок на цветовом круге</small>
+          </span>
+          <input
+            aria-label="Выбрать цвет акцента на цветовом круге"
+            onChange={(event) => selectCustomAccent(event.currentTarget.value)}
+            type="color"
+            value={
+              customAccent ??
+              colorThemes.find((option) => option.id === theme)?.primary ??
+              '#16834b'
+            }
+          />
+        </label>
       </section>
 
       <div className={styles.settingsGrid}>
