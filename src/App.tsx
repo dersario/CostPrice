@@ -3,7 +3,7 @@ import { IngredientsPage } from './pages/IngredientsPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import { isColorTheme, type ColorTheme } from './lib/themes'
+import { accentColors, isColorTheme, type ColorTheme } from './lib/themes'
 import { isSupabaseConfigured } from './sync/client'
 import { registerOnlineSync, synchronizeNow, type SyncResult } from './sync/synchronize'
 import { getWorkspaceCode } from './sync/workspace'
@@ -14,6 +14,10 @@ type Page = 'products' | 'recipes' | 'detail' | 'settings'
 const LAST_SYNC_KEY = 'recipe-cost.last-sync-at'
 const THEME_KEY = 'recipe-cost.color-theme'
 const ACCENT_KEY = 'recipe-cost.custom-accent'
+const CUSTOM_ACCENT_KEY = 'recipe-cost.saved-custom-accent'
+const TABLE_FONT_SIZE_KEY = 'recipe-cost.table-font-size'
+const DEFAULT_TABLE_FONT_SIZE = 16
+const DEFAULT_CUSTOM_ACCENT = '#16834b'
 const LEGACY_ACCENTS: Record<string, string> = {
   green: '#16834b',
   blue: '#1769aa',
@@ -32,6 +36,8 @@ function App() {
   const [queuedCount, setQueuedCount] = useState(0)
   const [theme, setTheme] = useState<ColorTheme>('light')
   const [customAccent, setCustomAccent] = useState<string | null>(null)
+  const [savedCustomAccent, setSavedCustomAccent] = useState(DEFAULT_CUSTOM_ACCENT)
+  const [tableFontSize, setTableFontSize] = useState(DEFAULT_TABLE_FONT_SIZE)
   const syncInProgress = useRef(false)
   const configured = isSupabaseConfigured()
 
@@ -53,6 +59,8 @@ function App() {
     try {
       const savedTheme = localStorage.getItem(THEME_KEY)
       const savedAccent = localStorage.getItem(ACCENT_KEY)
+      const savedCustomAccent = localStorage.getItem(CUSTOM_ACCENT_KEY)
+      const savedTableFontSize = Number(localStorage.getItem(TABLE_FONT_SIZE_KEY))
       if (isColorTheme(savedTheme)) {
         setTheme(savedTheme)
       } else if (savedTheme && savedTheme !== 'light') {
@@ -66,6 +74,22 @@ function App() {
       }
       if (savedAccent && /^#[\da-f]{6}$/i.test(savedAccent)) {
         setCustomAccent(savedAccent)
+      }
+      if (savedCustomAccent && /^#[\da-f]{6}$/i.test(savedCustomAccent)) {
+        setSavedCustomAccent(savedCustomAccent)
+      } else if (
+        savedAccent &&
+        /^#[\da-f]{6}$/i.test(savedAccent) &&
+        !accentColors.some((option) => option.color === savedAccent)
+      ) {
+        setSavedCustomAccent(savedAccent)
+      }
+      if (
+        Number.isInteger(savedTableFontSize) &&
+        savedTableFontSize >= 12 &&
+        savedTableFontSize <= 20
+      ) {
+        setTableFontSize(savedTableFontSize)
       }
     } catch (error) {
       setSyncError(messageOf(error, 'Не удалось прочитать настройки оформления.'))
@@ -102,6 +126,13 @@ function App() {
       }
     }
   }, [theme, customAccent])
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--table-font-size',
+      `${tableFontSize}px`,
+    )
+  }, [tableFontSize])
 
   function changeTheme(nextTheme: ColorTheme): void {
     setTheme(nextTheme)
@@ -229,6 +260,10 @@ function App() {
             onThemeChange={changeTheme}
             customAccent={customAccent}
             onCustomAccentChange={setCustomAccent}
+            savedCustomAccent={savedCustomAccent}
+            onSavedCustomAccentChange={setSavedCustomAccent}
+            tableFontSize={tableFontSize}
+            onTableFontSizeChange={setTableFontSize}
           />
         )}
       </main>

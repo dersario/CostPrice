@@ -92,6 +92,21 @@
   gap: 1rem;
 }
 
+.productFormGrid {
+  grid-template-columns:
+    minmax(12rem, 2fr)
+    minmax(7rem, 0.9fr)
+    minmax(7rem, 1fr)
+    minmax(10rem, 1.5fr)
+    minmax(9rem, 1.4fr);
+  align-items: end;
+}
+
+.productFormGrid .calculatedPrice {
+  box-sizing: border-box;
+  min-height: 2.8rem;
+}
+
 .calculatedPrice {
   display: grid;
   align-content: center;
@@ -197,6 +212,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  font-size: var(--table-font-size, 16px);
 }
 
 .table th,
@@ -209,10 +225,41 @@
 .table thead th {
   color: var(--muted);
   background: var(--table-head);
-  font-size: 0.75rem;
+  font-size: 0.75em;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.stickyFirstColumn thead th:first-child {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  background: var(--table-head);
+}
+
+.stickyFirstColumn thead th:not(:first-child) {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  background: var(--table-head);
+}
+
+.stickyFirstColumn tbody th:first-child {
+  position: sticky;
+  z-index: 1;
+  left: 0;
+  background: var(--surface);
+}
+
+.stickyFirstColumn {
+  min-width: 46rem;
+}
+
+.recipeNameColumn {
+  width: 42%;
+  min-width: 13rem;
 }
 
 .table tbody tr:last-child th,
@@ -227,6 +274,48 @@
 .rowActions {
   white-space: nowrap;
   text-align: right;
+}
+
+.tableRowActions {
+  text-align: center;
+}
+
+.rowActionStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.tableActionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.55rem;
+  color: var(--primary);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tableActionButton:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.tableActionButtonDanger {
+  color: var(--danger);
+}
+
+.tableActionButtonDanger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--surface);
 }
 
 .textButton,
@@ -418,6 +507,40 @@
   box-shadow: 0 8px 26px #1c33200a;
 }
 
+.tableFontSettings {
+  margin-bottom: 1.25rem;
+}
+
+.tableFontSettings .sectionTitle {
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.tableFontSettings output {
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.tableFontControl {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 32rem;
+}
+
+.tableFontControl input {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.tableFontScale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .themeCard {
   margin-bottom: 1.25rem;
 }
@@ -511,10 +634,32 @@
 .customColorChoice {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  min-height: 2.5rem;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
   color: var(--text);
+}
+
+.customColorApply {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
+}
+
+.customColorApply:hover .customColorLabel strong {
+  color: var(--primary);
+}
+
+.customColorApply:focus-visible {
+  border-radius: 0.25rem;
+  outline: 3px solid var(--primary-soft);
+  outline-offset: 3px;
 }
 
 .customColorLabel {
@@ -548,6 +693,10 @@
 
 .customColorChoice:hover .customColorPicker {
   box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.customColorChoice:hover {
+  background: var(--soft);
 }
 
 .customColorPicker:focus-visible {
@@ -650,6 +799,14 @@
 }
 
 @media (max-width: 850px) {
+  .productFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .productFormGrid > .field:first-child {
+    grid-column: 1 / -1;
+  }
+
   .inlineForm {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

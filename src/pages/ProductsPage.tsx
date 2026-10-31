@@ -418,7 +418,7 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">Рецепт</th>
+                <th className={styles.recipeNameColumn} scope="col">Рецепт</th>
                 <th scope="col">Себестоимость</th>
                 <th scope="col">На единицу</th>
                 <th scope="col">
@@ -429,7 +429,7 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
             <tbody>
               {rows.map(({ product, cost, unpricedCount }) => (
                 <tr key={product.id}>
-                  <th scope="row">
+                  <th className={styles.recipeNameColumn} scope="row">
                     <button
                       className={styles.productLink}
                       onClick={() => onOpenProduct(product.id)}
@@ -449,23 +449,25 @@ export function ProductsPage({ onOpenProduct }: ProductsPageProps) {
                   </th>
                   <td>{formatCurrency(cost.total)}</td>
                   <td>{formatCurrency(cost.perUnit)}</td>
-                  <td className={styles.rowActions}>
-                    <button
-                      aria-label={`Редактировать рецепт: ${product.name}`}
-                      className={styles.editRecipeButton}
-                      onClick={() => onOpenProduct(product.id)}
-                      type="button"
-                    >
-                      <span aria-hidden="true">✎</span>
-                      Редактировать рецепт
-                    </button>
-                    <button
-                      className={styles.textButtonDanger}
-                      onClick={() => void remove(product)}
-                      type="button"
-                    >
-                      Удалить
-                    </button>
+                  <td className={styles.tableRowActions}>
+                    <div className={styles.rowActionStack}>
+                      <button
+                        aria-label={`Редактировать рецепт: ${product.name}`}
+                        className={styles.tableActionButton}
+                        onClick={() => onOpenProduct(product.id)}
+                        type="button"
+                      >
+                        <span aria-hidden="true">✎</span>
+                        Редактировать рецепт
+                      </button>
+                      <button
+                        className={`${styles.tableActionButton} ${styles.tableActionButtonDanger}`}
+                        onClick={() => void remove(product)}
+                        type="button"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

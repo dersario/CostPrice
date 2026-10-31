@@ -24,6 +24,10 @@ interface SettingsPageProps {
   onThemeChange: (theme: ColorTheme) => void
   customAccent: string | null
   onCustomAccentChange: (color: string | null) => void
+  savedCustomAccent: string
+  onSavedCustomAccentChange: (color: string) => void
+  tableFontSize: number
+  onTableFontSizeChange: (size: number) => void
 }
 
 export function SettingsPage({
@@ -39,6 +43,10 @@ export function SettingsPage({
   onThemeChange,
   customAccent,
   onCustomAccentChange,
+  savedCustomAccent,
+  onSavedCustomAccentChange,
+  tableFontSize,
+  onTableFontSizeChange,
 }: SettingsPageProps) {
   const [workspaceCode, setCode] = useState('')
   const [online, setOnline] = useState(navigator.onLine)
@@ -137,6 +145,28 @@ export function SettingsPage({
     }
   }
 
+  function selectCustomAccent(color: string): void {
+    try {
+      localStorage.setItem('recipe-cost.saved-custom-accent', color)
+      localStorage.setItem('recipe-cost.custom-accent', color)
+      onSavedCustomAccentChange(color)
+      onCustomAccentChange(color)
+      setThemeError(null)
+    } catch (caught) {
+      setThemeError(messageOf(caught, 'Не удалось сохранить свой цвет.'))
+    }
+  }
+
+  function selectTableFontSize(size: number): void {
+    try {
+      localStorage.setItem('recipe-cost.table-font-size', String(size))
+      onTableFontSizeChange(size)
+      setThemeError(null)
+    } catch (caught) {
+      setThemeError(messageOf(caught, 'Не удалось сохранить размер шрифта таблиц.'))
+    }
+  }
+
   return (
     <section>
       <PageHeading
@@ -206,18 +236,24 @@ export function SettingsPage({
           </div>
         </div>
         <div className={styles.customAccentSection}>
-          <label
+          <div
             className={
               customAccentSelected
                 ? `${styles.customColorChoice} ${styles.customColorChoiceActive}`
                 : styles.customColorChoice
             }
-            title="Свой цвет"
           >
-            <span className={styles.customColorLabel}>
-              <strong>Свой цвет</strong>
-              <small>Настроить вручную</small>
-            </span>
+            <button
+              aria-pressed={customAccentSelected}
+              className={styles.customColorApply}
+              onClick={() => selectAccent(savedCustomAccent)}
+              type="button"
+            >
+              <span className={styles.customColorLabel}>
+                <strong>Свой цвет</strong>
+                <small>Настроить вручную</small>
+              </span>
+            </button>
             <input
               aria-label="Выбрать свой цвет акцента"
               className={
@@ -225,12 +261,40 @@ export function SettingsPage({
                   ? `${styles.customColorPicker} ${styles.customColorPickerActive}`
                   : styles.customColorPicker
               }
-              onChange={(event) => selectAccent(event.currentTarget.value)}
+              onChange={(event) => selectCustomAccent(event.currentTarget.value)}
               type="color"
-              value={customAccent ?? '#16834b'}
+              value={savedCustomAccent}
             />
-          </label>
+          </div>
         </div>
+      </section>
+
+      <section className={`${styles.settingsCard} ${styles.tableFontSettings}`}>
+        <div className={styles.sectionTitle}>
+          <div>
+            <h2>Размер шрифта таблиц</h2>
+            <p>Настройка применяется к таблицам продуктов и рецептов.</p>
+          </div>
+          <output htmlFor="table-font-size">{tableFontSize} px</output>
+        </div>
+        <label className={styles.tableFontControl}>
+          <span className={styles.visuallyHidden}>Размер шрифта таблиц</span>
+          <input
+            id="table-font-size"
+            max="20"
+            min="12"
+            onChange={(event) =>
+              selectTableFontSize(Number(event.currentTarget.value))
+            }
+            step="1"
+            type="range"
+            value={tableFontSize}
+          />
+          <span className={styles.tableFontScale} aria-hidden="true">
+            <span>12 px</span>
+            <span>20 px</span>
+          </span>
+        </label>
       </section>
 
       <div className={styles.settingsGrid}>

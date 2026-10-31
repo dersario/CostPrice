@@ -138,7 +138,7 @@ export function IngredientsPage() {
               ×
             </button>
           </div>
-          <div className={styles.formGrid}>
+          <div className={`${styles.formGrid} ${styles.productFormGrid}`}>
             <label className={styles.field}>
               <span>Название</span>
               <input
@@ -216,11 +216,10 @@ export function IngredientsPage() {
         </div>
       ) : (
         <div className={styles.tableCard}>
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.stickyFirstColumn}`}>
             <thead>
               <tr>
                 <th scope="col">Продукт</th>
-                <th scope="col">Единица</th>
                 <th scope="col">Количество</th>
                 <th scope="col">Цена покупки</th>
                 <th scope="col">Цена за единицу</th>
@@ -233,7 +232,6 @@ export function IngredientsPage() {
               {ingredients.map((ingredient) => (
                 <tr key={ingredient.id}>
                   <th scope="row">{ingredient.name}</th>
-                  <td>{unitLabels[ingredient.unit]}</td>
                   <td>
                     {ingredient.hasPrice
                       ? `${formatNumber(ingredient.purchaseQuantity)} ${unitLabels[ingredient.unit]}`
@@ -249,21 +247,23 @@ export function IngredientsPage() {
                       ? `${formatCurrency(ingredient.pricePerUnit)}/${unitLabels[ingredient.unit]}`
                       : 'Не указана'}
                   </td>
-                  <td className={styles.rowActions}>
-                    <button
-                      className={styles.textButton}
-                      onClick={() => startEdit(ingredient)}
-                      type="button"
-                    >
-                      Изменить
-                    </button>
-                    <button
-                      className={styles.textButtonDanger}
-                      onClick={() => void remove(ingredient)}
-                      type="button"
-                    >
-                      Удалить
-                    </button>
+                  <td className={styles.tableRowActions}>
+                    <div className={styles.rowActionStack}>
+                      <button
+                        className={styles.tableActionButton}
+                        onClick={() => startEdit(ingredient)}
+                        type="button"
+                      >
+                        Изменить
+                      </button>
+                      <button
+                        className={`${styles.tableActionButton} ${styles.tableActionButtonDanger}`}
+                        onClick={() => void remove(ingredient)}
+                        type="button"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
