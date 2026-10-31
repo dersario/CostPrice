@@ -45,7 +45,14 @@ export function SettingsPage({
   const [queueCount, setQueueCount] = useState(queuedCount)
   const [error, setError] = useState<string | null>(null)
   const [themeError, setThemeError] = useState<string | null>(null)
-  const selectedAccent = customAccent ?? accentColors[0].color
+  const selectedPresetAccent = accentColors.some(
+    (option) => option.color === customAccent,
+  )
+    ? customAccent
+    : customAccent === null
+      ? accentColors[0].color
+      : null
+  const customAccentSelected = customAccent !== null && selectedPresetAccent === null
 
   useEffect(() => {
     try {
@@ -183,9 +190,9 @@ export function SettingsPage({
             {accentColors.map((option) => (
               <button
                 aria-label={option.name}
-                aria-pressed={selectedAccent === option.color}
+                aria-pressed={selectedPresetAccent === option.color}
                 className={
-                  selectedAccent === option.color
+                  selectedPresetAccent === option.color
                     ? `${styles.accentSwatch} ${styles.accentSwatchActive}`
                     : styles.accentSwatch
                 }
@@ -199,14 +206,25 @@ export function SettingsPage({
           </div>
         </div>
         <div className={styles.customAccentSection}>
-          <label className={styles.customColorChoice} title="Свой цвет">
+          <label
+            className={
+              customAccentSelected
+                ? `${styles.customColorChoice} ${styles.customColorChoiceActive}`
+                : styles.customColorChoice
+            }
+            title="Свой цвет"
+          >
             <span className={styles.customColorLabel}>
               <strong>Свой цвет</strong>
               <small>Настроить вручную</small>
             </span>
             <input
               aria-label="Выбрать свой цвет акцента"
-              className={styles.customColorPicker}
+              className={
+                customAccentSelected
+                  ? `${styles.customColorPicker} ${styles.customColorPickerActive}`
+                  : styles.customColorPicker
+              }
               onChange={(event) => selectAccent(event.currentTarget.value)}
               type="color"
               value={customAccent ?? '#16834b'}

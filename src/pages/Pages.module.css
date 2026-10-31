@@ -540,6 +540,12 @@
   cursor: pointer;
 }
 
+.customColorPickerActive {
+  border: 3px solid #fff;
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
 .customColorChoice:hover .customColorPicker {
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
@@ -654,6 +660,39 @@
 }
 
 @media (max-width: 600px) {
+  .themeCard {
+    padding: 1rem;
+  }
+
+  .themeChoices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .themeOption {
+    justify-content: center;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 0.5rem;
+  }
+
+  .accentChoices {
+    display: grid;
+    grid-template-columns: repeat(4, 2.75rem);
+    gap: 0.5rem;
+  }
+
+  .accentSwatch,
+  .customColorPicker {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .customColorChoice {
+    min-height: 2.75rem;
+  }
+
   .settingsGrid {
     grid-template-columns: 1fr;
   }
