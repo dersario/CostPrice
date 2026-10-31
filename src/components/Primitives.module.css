@@ -72,6 +72,16 @@
   .pageHeading {
     align-items: flex-start;
     flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .pageHeading h1 {
+    font-size: 1.75rem;
+  }
+
+  .pageHeading p {
+    margin-top: 0.4rem;
   }
 
   .headingAction {
