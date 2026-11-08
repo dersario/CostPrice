@@ -1,14 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Feedback } from '../components/Feedback'
 import { PageHeading } from '../components/PageHeading'
 import { db } from '../db/database'
+import {
+  enqueueAllLocalRecordsForSync,
+  exportDatabaseBackup,
+  importDatabaseBackup,
+  subscribeToDataChanges,
+  type BackupPayload,
+} from '../db/repository'
+import { downloadTextFile } from '../lib/export'
 import { formatDateTime } from '../lib/format'
+import { getDefaultHourlyRate, setDefaultHourlyRate } from '../lib/preferences'
+import { accentColors, colorThemes, type ColorTheme } from '../lib/themes'
 import {
   clearWorkspaceCode,
+  generateRandomWorkspaceCode,
   getWorkspaceCode,
   setWorkspaceCode,
 } from '../sync/workspace'
-import { accentColors, colorThemes, type ColorTheme } from '../lib/themes'
 import styles from './Pages.module.css'
 
 interface SettingsPageProps {
@@ -19,7 +29,7 @@ interface SettingsPageProps {
   syncError: string | null
   queuedCount: number
   onConnectionChange: (connected: boolean) => void
-  onSyncNow: () => Promise<void>
+  onSyncNow: (options?: { forceFullPull?: boolean }) => Promise<void>
   theme: ColorTheme
   onThemeChange: (theme: ColorTheme) => void
   customAccent: string | null
@@ -51,8 +61,16 @@ export function SettingsPage({
   const [workspaceCode, setCode] = useState('')
   const [online, setOnline] = useState(navigator.onLine)
   const [queueCount, setQueueCount] = useState(queuedCount)
+  const [hourlyRateInput, setHourlyRateInput] = useState(() => {
+    const r = getDefaultHourlyRate()
+    return r > 0 ? String(r) : ''
+  })
+  const [backupMessage, setBackupMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [themeError, setThemeError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge')
+
   const selectedPresetAccent = accentColors.some(
     (option) => option.color === customAccent,
   )
@@ -61,6 +79,14 @@ export function SettingsPage({
       ? accentColors[0].color
       : null
   const customAccentSelected = customAccent !== null && selectedPresetAccent === null
+
+  const refreshQueue = useCallback(async (): Promise<void> => {
+    try {
+      setQueueCount(await db.syncQueue.count())
+    } catch (caught) {
+      setError(messageOf(caught, 'Не удалось прочитать очередь синхронизации.'))
+    }
+  }, [])
 
   useEffect(() => {
     try {
@@ -75,33 +101,35 @@ export function SettingsPage({
     const handleOffline = () => setOnline(false)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
+    const unsubscribeData = subscribeToDataChanges(() => {
+      void refreshQueue()
+    })
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
+      unsubscribeData()
     }
-  }, [])
+  }, [refreshQueue])
 
   useEffect(() => {
     setQueueCount(queuedCount)
   }, [queuedCount])
 
-  async function refreshQueue(): Promise<void> {
-    try {
-      setQueueCount(await db.syncQueue.count())
-    } catch (caught) {
-      setError(messageOf(caught, 'Не удалось прочитать очередь синхронизации.'))
-    }
-  }
-
-  function connect(): void {
+  async function connect(): Promise<void> {
     if (!configured) {
       setError('Синхронизация не настроена: проверьте VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY.')
       return
     }
 
     try {
+      const previousCode = getWorkspaceCode()
       setWorkspaceCode(workspaceCode)
-      setCode(getWorkspaceCode())
+      const normalized = getWorkspaceCode()
+      setCode(normalized)
+      if (previousCode !== normalized) {
+        await enqueueAllLocalRecordsForSync()
+        await refreshQueue()
+      }
       onConnectionChange(true)
       setError(null)
     } catch (caught) {
@@ -120,9 +148,70 @@ export function SettingsPage({
     }
   }
 
-  async function synchronize(): Promise<void> {
-    await onSyncNow()
+  async function synchronize(forceFullPull = false): Promise<void> {
+    await onSyncNow({ forceFullPull })
     await refreshQueue()
+  }
+
+  function saveHourlyRate(): void {
+    const val = hourlyRateInput.trim() === '' ? 0 : Number(hourlyRateInput)
+    if (!Number.isFinite(val) || val < 0) {
+      setError('Ставка в час должна быть неотрицательным числом.')
+      return
+    }
+    try {
+      setDefaultHourlyRate(val)
+      setBackupMessage('Ставка оплаты труда по умолчанию сохранена.')
+      setError(null)
+    } catch (caught) {
+      setError(messageOf(caught, 'Не удалось сохранить ставку в час.'))
+    }
+  }
+
+  async function handleExportJson(): Promise<void> {
+    try {
+      const backup = await exportDatabaseBackup()
+      const dateSuffix = new Date().toISOString().slice(0, 10)
+      downloadTextFile(
+        `costprice-backup-${dateSuffix}.json`,
+        JSON.stringify(backup, null, 2),
+        'application/json;charset=utf-8',
+      )
+      setBackupMessage('Резервная копия JSON успешно скачана.')
+      setError(null)
+    } catch (caught) {
+      setError(messageOf(caught, 'Не удалось создать резервную копию.'))
+    }
+  }
+
+  async function handleImportJson(
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file) return
+
+    if (
+      importMode === 'replace' &&
+      !window.confirm(
+        'Заменить все текущие данные в браузере данными из файла резервной копии?',
+      )
+    ) {
+      return
+    }
+
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text) as BackupPayload
+      const stats = await importDatabaseBackup(parsed, importMode)
+      await refreshQueue()
+      setBackupMessage(
+        `Импорт завершён: ингредиентов — ${stats.ingredients}, рецептов — ${stats.products}.`,
+      )
+      setError(null)
+    } catch (caught) {
+      setError(messageOf(caught, 'Не удалось импортировать резервную копию.'))
+    }
   }
 
   function selectTheme(nextTheme: ColorTheme): void {
@@ -171,17 +260,25 @@ export function SettingsPage({
     <section>
       <PageHeading
         title="Настройки"
-        description="Синхронизация между устройствами — по желанию."
+        description="Оформление, расчётные нормативы, резервные копии и синхронизация между устройствами."
       />
 
       <Feedback error={error ?? themeError ?? syncError} />
+
+      {backupMessage && (
+        <div className={styles.notice} role="status">
+          <strong>Готово</strong>
+          <span>{backupMessage}</span>
+        </div>
+      )}
 
       {!configured && (
         <div className={styles.notice}>
           <strong>Supabase не настроен.</strong>
           <span>
             Добавьте VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY в .env, чтобы
-            включить синхронизацию.
+            включить облачную синхронизацию. Локальные резервные копии JSON
+            работают всегда.
           </span>
         </div>
       )}
@@ -209,7 +306,10 @@ export function SettingsPage({
               onClick={() => selectTheme(option.id)}
               type="button"
             >
-              <span aria-hidden="true" className={`${styles.themePreview} ${styles[`themePreview${option.id}`]}`} />
+              <span
+                aria-hidden="true"
+                className={`${styles.themePreview} ${styles[`themePreview${option.id}`]}`}
+              />
               <span>{option.name}</span>
             </button>
           ))}
@@ -269,32 +369,114 @@ export function SettingsPage({
         </div>
       </section>
 
+      <div className={styles.settingsGrid + ' ' + styles.tableFontSettings}>
+        <section className={styles.settingsCard}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <h2>Размер шрифта таблиц</h2>
+              <p>Настройка применяется к таблицам ингредиентов и рецептов.</p>
+            </div>
+            <output htmlFor="table-font-size">{tableFontSize} px</output>
+          </div>
+          <label className={styles.tableFontControl}>
+            <span className={styles.visuallyHidden}>Размер шрифта таблиц</span>
+            <input
+              id="table-font-size"
+              max="20"
+              min="12"
+              onChange={(event) =>
+                selectTableFontSize(Number(event.currentTarget.value))
+              }
+              step="1"
+              type="range"
+              value={tableFontSize}
+            />
+            <span className={styles.tableFontScale} aria-hidden="true">
+              <span>12 px</span>
+              <span>20 px</span>
+            </span>
+          </label>
+        </section>
+
+        <section className={styles.settingsCard}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <h2>Нормативы расчёта</h2>
+              <p>Подставляются по умолчанию при добавлении затрат на труд.</p>
+            </div>
+          </div>
+          <label className={styles.field}>
+            <span>Ставка оплаты труда по умолчанию, ₽/час</span>
+            <input
+              min="0"
+              onChange={(event) => setHourlyRateInput(event.currentTarget.value)}
+              placeholder="Напр. 500"
+              step="any"
+              type="number"
+              value={hourlyRateInput}
+            />
+          </label>
+          <div className={styles.formActions}>
+            <button
+              className={styles.buttonSecondary}
+              onClick={saveHourlyRate}
+              type="button"
+            >
+              Сохранить ставку
+            </button>
+          </div>
+        </section>
+      </div>
+
       <section className={`${styles.settingsCard} ${styles.tableFontSettings}`}>
         <div className={styles.sectionTitle}>
           <div>
-            <h2>Размер шрифта таблиц</h2>
-            <p>Настройка применяется к таблицам продуктов и рецептов.</p>
+            <h2>Резервная копия данных (JSON)</h2>
+            <p>
+              Сохраните все ингредиенты и рецепты в файл на устройство или
+              восстановите их из ранее сохранённой копии.
+            </p>
           </div>
-          <output htmlFor="table-font-size">{tableFontSize} px</output>
         </div>
-        <label className={styles.tableFontControl}>
-          <span className={styles.visuallyHidden}>Размер шрифта таблиц</span>
+        <div className={styles.formGrid}>
+          <label className={styles.field}>
+            <span>Режим при импорте из файла</span>
+            <select
+              onChange={(event) =>
+                setImportMode(
+                  event.currentTarget.value === 'replace' ? 'replace' : 'merge',
+                )
+              }
+              value={importMode}
+            >
+              <option value="merge">Объединить с текущими данными</option>
+              <option value="replace">Полностью заменить текущие данные</option>
+            </select>
+          </label>
+        </div>
+        <div className={styles.formActions}>
+          <button
+            className={styles.buttonPrimary}
+            onClick={() => void handleExportJson()}
+            type="button"
+          >
+            Скачать резервную копию (JSON)
+          </button>
+          <button
+            className={styles.buttonSecondary}
+            onClick={() => fileInputRef.current?.click()}
+            type="button"
+          >
+            Загрузить из файла (JSON)…
+          </button>
           <input
-            id="table-font-size"
-            max="20"
-            min="12"
-            onChange={(event) =>
-              selectTableFontSize(Number(event.currentTarget.value))
-            }
-            step="1"
-            type="range"
-            value={tableFontSize}
+            accept="application/json,.json"
+            className={styles.visuallyHidden}
+            onChange={(event) => void handleImportJson(event)}
+            ref={fileInputRef}
+            type="file"
           />
-          <span className={styles.tableFontScale} aria-hidden="true">
-            <span>12 px</span>
-            <span>20 px</span>
-          </span>
-        </label>
+        </div>
       </section>
 
       <div className={styles.settingsGrid}>
@@ -303,8 +485,8 @@ export function SettingsPage({
             <div>
               <h2>Рабочая область</h2>
               <p>
-                Используйте одинаковый код на устройствах, которым нужно обмениваться
-                данными.
+                Используйте одинаковый секретный код на устройствах, которым
+                нужно обмениваться данными.
               </p>
             </div>
             <span
@@ -338,19 +520,28 @@ export function SettingsPage({
                 Отключиться
               </button>
             ) : (
-              <button
-                className={styles.buttonPrimary}
-                disabled={!configured}
-                onClick={connect}
-                type="button"
-              >
-                Подключиться
-              </button>
+              <>
+                <button
+                  className={styles.buttonPrimary}
+                  disabled={!configured}
+                  onClick={() => void connect()}
+                  type="button"
+                >
+                  Подключиться
+                </button>
+                <button
+                  className={styles.buttonSecondary}
+                  onClick={() => setCode(generateRandomWorkspaceCode())}
+                  type="button"
+                >
+                  Сгенерировать надёжный код
+                </button>
+              </>
             )}
           </div>
           <p className={styles.securityNote}>
-            Код хранится только в этом браузере и служит общим ключом пространства,
-            а не логином. Не используйте его как защиту секретных данных.
+            Код хешируется (SHA-256) и передаётся в заголовке запроса для
+            изоляции рабочей области (RLS). Используйте длинный случайный код.
           </p>
         </section>
 
@@ -358,7 +549,10 @@ export function SettingsPage({
           <div className={styles.sectionTitle}>
             <div>
               <h2>Состояние синхронизации</h2>
-              <p>Локальные данные доступны и без подключения к сети.</p>
+              <p>
+                Изменения автоматически отправляются через несколько секунд после
+                сохранения.
+              </p>
             </div>
             <span
               className={`${styles.statusPill} ${
@@ -380,14 +574,24 @@ export function SettingsPage({
             </div>
           </dl>
 
-          <button
-            className={styles.buttonPrimary}
-            disabled={!connected || !configured || !online || syncing}
-            onClick={() => void synchronize()}
-            type="button"
-          >
-            {syncing ? 'Синхронизация…' : 'Синхронизировать сейчас'}
-          </button>
+          <div className={styles.formActions}>
+            <button
+              className={styles.buttonPrimary}
+              disabled={!connected || !configured || !online || syncing}
+              onClick={() => void synchronize(false)}
+              type="button"
+            >
+              {syncing ? 'Синхронизация…' : 'Синхронизировать сейчас'}
+            </button>
+            <button
+              className={styles.buttonSecondary}
+              disabled={!connected || !configured || !online || syncing}
+              onClick={() => void synchronize(true)}
+              type="button"
+            >
+              Полная пересинхронизация
+            </button>
+          </div>
         </section>
       </div>
     </section>
