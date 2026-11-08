@@ -35,9 +35,9 @@ export class AppDatabase extends Dexie {
       })
       .upgrade(async (transaction) => {
         await transaction.table('ingredients').toCollection().modify((ingredient) => {
-          ingredient.purchaseQuantity = 1
-          ingredient.purchasePrice = ingredient.pricePerUnit
-          ingredient.hasPrice = true
+          ingredient.purchaseQuantity ??= 1
+          ingredient.purchasePrice ??= ingredient.pricePerUnit
+          ingredient.hasPrice ??= true
         })
       })
 
@@ -51,7 +51,7 @@ export class AppDatabase extends Dexie {
       })
       .upgrade(async (transaction) => {
         await transaction.table('ingredients').toCollection().modify((ingredient) => {
-          ingredient.hasPrice = true
+          ingredient.hasPrice ??= true
         })
       })
 
@@ -67,6 +67,31 @@ export class AppDatabase extends Dexie {
         await transaction.table('products').toCollection().modify((product) => {
           product.markupType ??= 'absolute'
           product.markupValue ??= 0
+        })
+      })
+
+    this.version(5)
+      .stores({
+        ingredients: '&id, name, updatedAt',
+        products: '&id, name, updatedAt',
+        recipeItems: '&id, productId, ingredientId, itemType, updatedAt',
+        directCosts: '&id, productId, category, updatedAt',
+        syncQueue: '++id, queuedAt, [entity+entityId]',
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table('ingredients').toCollection().modify((ingredient) => {
+          ingredient.gramsPerMl ??= null
+          ingredient.gramsPerPiece ??= null
+        })
+        await transaction.table('products').toCollection().modify((product) => {
+          product.panDiameterCm ??= null
+        })
+        await transaction.table('recipeItems').toCollection().modify((item) => {
+          item.itemType ??= 'ingredient'
+        })
+        await transaction.table('directCosts').toCollection().modify((cost) => {
+          cost.hours ??= null
+          cost.hourlyRate ??= null
         })
       })
   }

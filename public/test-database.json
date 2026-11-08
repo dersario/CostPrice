@@ -1,0 +1,501 @@
+{
+  "version": 1,
+  "exportedAt": "2026-11-08T12:00:00.000Z",
+  "ingredients": [
+    {
+      "id": "11111111-1111-4111-8111-000000000001",
+      "name": "Мука пшеничная в/с",
+      "unit": "kg",
+      "purchaseQuantity": 2,
+      "purchasePrice": 160,
+      "pricePerUnit": 80,
+      "hasPrice": true,
+      "gramsPerMl": 0.65,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000002",
+      "name": "Сахар песок",
+      "unit": "kg",
+      "purchaseQuantity": 1,
+      "purchasePrice": 90,
+      "pricePerUnit": 90,
+      "hasPrice": true,
+      "gramsPerMl": 0.85,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000003",
+      "name": "Сахарная пудра",
+      "unit": "g",
+      "purchaseQuantity": 500,
+      "purchasePrice": 120,
+      "pricePerUnit": 0.24,
+      "hasPrice": true,
+      "gramsPerMl": 0.56,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000004",
+      "name": "Яйцо куриное С1",
+      "unit": "pcs",
+      "purchaseQuantity": 10,
+      "purchasePrice": 140,
+      "pricePerUnit": 14,
+      "hasPrice": true,
+      "gramsPerMl": 1.03,
+      "gramsPerPiece": 55,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000005",
+      "name": "Масло сливочное 82,5%",
+      "unit": "g",
+      "purchaseQuantity": 500,
+      "purchasePrice": 650,
+      "pricePerUnit": 1.3,
+      "hasPrice": true,
+      "gramsPerMl": 0.91,
+      "gramsPerPiece": 180,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000006",
+      "name": "Сливки 33%",
+      "unit": "l",
+      "purchaseQuantity": 1,
+      "purchasePrice": 580,
+      "pricePerUnit": 580,
+      "hasPrice": true,
+      "gramsPerMl": 1.01,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000007",
+      "name": "Сыр творожный (крем-чиз)",
+      "unit": "kg",
+      "purchaseQuantity": 2,
+      "purchasePrice": 1480,
+      "pricePerUnit": 740,
+      "hasPrice": true,
+      "gramsPerMl": null,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000008",
+      "name": "Молоко 3,2%",
+      "unit": "l",
+      "purchaseQuantity": 1,
+      "purchasePrice": 110,
+      "pricePerUnit": 110,
+      "hasPrice": true,
+      "gramsPerMl": 1.03,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000009",
+      "name": "Масло растительное",
+      "unit": "l",
+      "purchaseQuantity": 1,
+      "purchasePrice": 150,
+      "pricePerUnit": 150,
+      "hasPrice": true,
+      "gramsPerMl": 0.92,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000010",
+      "name": "Клубника (пюре)",
+      "unit": "kg",
+      "purchaseQuantity": 1,
+      "purchasePrice": 620,
+      "pricePerUnit": 620,
+      "hasPrice": true,
+      "gramsPerMl": 1.05,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000011",
+      "name": "Пектин NH",
+      "unit": "g",
+      "purchaseQuantity": 100,
+      "purchasePrice": 680,
+      "pricePerUnit": 6.8,
+      "hasPrice": true,
+      "gramsPerMl": null,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000012",
+      "name": "Разрыхлитель",
+      "unit": "g",
+      "purchaseQuantity": 200,
+      "purchasePrice": 110,
+      "pricePerUnit": 0.55,
+      "hasPrice": true,
+      "gramsPerMl": null,
+      "gramsPerPiece": 10,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000013",
+      "name": "Ванильная паста",
+      "unit": "g",
+      "purchaseQuantity": 100,
+      "purchasePrice": 890,
+      "pricePerUnit": 8.9,
+      "hasPrice": true,
+      "gramsPerMl": 1.2,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000014",
+      "name": "Свежая голубика (для декора)",
+      "unit": "g",
+      "purchaseQuantity": 1,
+      "purchasePrice": 0,
+      "pricePerUnit": 0,
+      "hasPrice": false,
+      "gramsPerMl": null,
+      "gramsPerPiece": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "22222222-2222-4222-8222-000000000001",
+      "name": "ПФ: Бисквит ванильный (Ø 18 см)",
+      "description": "Классический шифоновый бисквит на 3 коржа для торта 18 см",
+      "outputQuantity": 550,
+      "outputUnit": "g",
+      "panDiameterCm": 18,
+      "markupType": "absolute",
+      "markupValue": 0,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "22222222-2222-4222-8222-000000000002",
+      "name": "ПФ: Крем-чиз на сливках",
+      "description": "Базовый стабильный крем для прослойки тортов и шапочек капкейков",
+      "outputQuantity": 800,
+      "outputUnit": "g",
+      "panDiameterCm": null,
+      "markupType": "absolute",
+      "markupValue": 0,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "22222222-2222-4222-8222-000000000003",
+      "name": "ПФ: Клубничное конфи",
+      "description": "Ягодная начинка на пектине NH (2 кольца по 16 см)",
+      "outputQuantity": 350,
+      "outputUnit": "g",
+      "panDiameterCm": 16,
+      "markupType": "absolute",
+      "markupValue": 0,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "22222222-2222-4222-8222-000000000004",
+      "name": "Торт «Клубничный пломбир» (2 кг, Ø 18 см)",
+      "description": "Сборный торт из ванильного бисквита, клубничного конфи и крем-чиза. Расчёт по целевой марже 55%.",
+      "outputQuantity": 2,
+      "outputUnit": "kg",
+      "panDiameterCm": 18,
+      "markupType": "margin",
+      "markupValue": 55,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "22222222-2222-4222-8222-000000000005",
+      "name": "Набор ванильных капкейков с ягодами (6 шт.)",
+      "description": "Коробка из 6 капкейков с шапочкой крем-чиз и клубничным центром. Расчёт по целевому фудкосту 30%.",
+      "outputQuantity": 6,
+      "outputUnit": "pcs",
+      "panDiameterCm": null,
+      "markupType": "foodCost",
+      "markupValue": 30,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    }
+  ],
+  "recipeItems": [
+    {
+      "id": "33333333-3333-4333-8333-000000000001",
+      "productId": "22222222-2222-4222-8222-000000000001",
+      "ingredientId": "11111111-1111-4111-8111-000000000004",
+      "itemType": "ingredient",
+      "quantity": 220,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000002",
+      "productId": "22222222-2222-4222-8222-000000000001",
+      "ingredientId": "11111111-1111-4111-8111-000000000002",
+      "itemType": "ingredient",
+      "quantity": 150,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000003",
+      "productId": "22222222-2222-4222-8222-000000000001",
+      "ingredientId": "11111111-1111-4111-8111-000000000001",
+      "itemType": "ingredient",
+      "quantity": 160,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000004",
+      "productId": "22222222-2222-4222-8222-000000000001",
+      "ingredientId": "11111111-1111-4111-8111-000000000008",
+      "itemType": "ingredient",
+      "quantity": 60,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000005",
+      "productId": "22222222-2222-4222-8222-000000000001",
+      "ingredientId": "11111111-1111-4111-8111-000000000009",
+      "itemType": "ingredient",
+      "quantity": 45,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000006",
+      "productId": "22222222-2222-4222-8222-000000000001",
+      "ingredientId": "11111111-1111-4111-8111-000000000012",
+      "itemType": "ingredient",
+      "quantity": 6,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000007",
+      "productId": "22222222-2222-4222-8222-000000000002",
+      "ingredientId": "11111111-1111-4111-8111-000000000007",
+      "itemType": "ingredient",
+      "quantity": 500,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000008",
+      "productId": "22222222-2222-4222-8222-000000000002",
+      "ingredientId": "11111111-1111-4111-8111-000000000006",
+      "itemType": "ingredient",
+      "quantity": 200,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000009",
+      "productId": "22222222-2222-4222-8222-000000000002",
+      "ingredientId": "11111111-1111-4111-8111-000000000003",
+      "itemType": "ingredient",
+      "quantity": 95,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000010",
+      "productId": "22222222-2222-4222-8222-000000000002",
+      "ingredientId": "11111111-1111-4111-8111-000000000013",
+      "itemType": "ingredient",
+      "quantity": 5,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000011",
+      "productId": "22222222-2222-4222-8222-000000000003",
+      "ingredientId": "11111111-1111-4111-8111-000000000010",
+      "itemType": "ingredient",
+      "quantity": 300,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000012",
+      "productId": "22222222-2222-4222-8222-000000000003",
+      "ingredientId": "11111111-1111-4111-8111-000000000002",
+      "itemType": "ingredient",
+      "quantity": 50,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000013",
+      "productId": "22222222-2222-4222-8222-000000000003",
+      "ingredientId": "11111111-1111-4111-8111-000000000011",
+      "itemType": "ingredient",
+      "quantity": 6,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000014",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "ingredientId": "22222222-2222-4222-8222-000000000001",
+      "itemType": "product",
+      "quantity": 550,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000015",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "ingredientId": "22222222-2222-4222-8222-000000000002",
+      "itemType": "product",
+      "quantity": 950,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000016",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "ingredientId": "22222222-2222-4222-8222-000000000003",
+      "itemType": "product",
+      "quantity": 350,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000017",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "ingredientId": "11111111-1111-4111-8111-000000000008",
+      "itemType": "ingredient",
+      "quantity": 100,
+      "quantityUnit": "ml",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000018",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "ingredientId": "11111111-1111-4111-8111-000000000014",
+      "itemType": "ingredient",
+      "quantity": 50,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000019",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "ingredientId": "11111111-1111-4111-8111-000000000001",
+      "itemType": "ingredient",
+      "quantity": 120,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000020",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "ingredientId": "11111111-1111-4111-8111-000000000005",
+      "itemType": "ingredient",
+      "quantity": 80,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000021",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "ingredientId": "11111111-1111-4111-8111-000000000002",
+      "itemType": "ingredient",
+      "quantity": 100,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000022",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "ingredientId": "11111111-1111-4111-8111-000000000004",
+      "itemType": "ingredient",
+      "quantity": 2,
+      "quantityUnit": "pcs",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000023",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "ingredientId": "22222222-2222-4222-8222-000000000002",
+      "itemType": "product",
+      "quantity": 240,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "33333333-3333-4333-8333-000000000024",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "ingredientId": "22222222-2222-4222-8222-000000000003",
+      "itemType": "product",
+      "quantity": 90,
+      "quantityUnit": "g",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    }
+  ],
+  "directCosts": [
+    {
+      "id": "44444444-4444-4444-8444-000000000001",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "name": "Сборка, выравнивание и декор торта",
+      "amount": 900,
+      "category": "labor",
+      "hours": 1.5,
+      "hourlyRate": 600,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "44444444-4444-4444-8444-000000000002",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "name": "Коробка тубус, усиленная подложка, лента",
+      "amount": 220,
+      "category": "packaging",
+      "hours": null,
+      "hourlyRate": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "44444444-4444-4444-8444-000000000003",
+      "productId": "22222222-2222-4222-8222-000000000004",
+      "name": "Электроэнергия и амортизация инвентаря",
+      "amount": 80,
+      "category": "overhead",
+      "hours": null,
+      "hourlyRate": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "44444444-4444-4444-8444-000000000004",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "name": "Выпечка и отсадка крема",
+      "amount": 400,
+      "category": "labor",
+      "hours": 0.8,
+      "hourlyRate": 500,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    {
+      "id": "44444444-4444-4444-8444-000000000005",
+      "productId": "22222222-2222-4222-8222-000000000005",
+      "name": "Коробка на 6 ячеек и капсулы",
+      "amount": 115,
+      "category": "packaging",
+      "hours": null,
+      "hourlyRate": null,
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    }
+  ]
+}

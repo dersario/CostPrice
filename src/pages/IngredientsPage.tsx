@@ -1,8 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Feedback } from '../components/Feedback'
 import { PageHeading } from '../components/PageHeading'
 import { UnitSelect } from '../components/UnitSelect'
-import { deleteIngredient, listIngredients, saveIngredient } from '../db/repository'
+import {
+  deleteIngredient,
+  listIngredients,
+  saveIngredient,
+  subscribeToDataChanges,
+} from '../db/repository'
 import { formatCurrency, formatNumber } from '../lib/format'
 import { createId } from '../lib/id'
 import { unitLabels } from '../lib/units'
@@ -14,6 +19,8 @@ interface IngredientForm {
   unit: MeasurementUnit
   quantity: string
   totalPrice: string
+  gramsPerMl: string
+  gramsPerPiece: string
 }
 
 const emptyForm: IngredientForm = {
@@ -21,6 +28,8 @@ const emptyForm: IngredientForm = {
   unit: 'g',
   quantity: '',
   totalPrice: '',
+  gramsPerMl: '',
+  gramsPerPiece: '',
 }
 
 export function IngredientsPage() {
@@ -30,17 +39,20 @@ export function IngredientsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function refresh(): Promise<void> {
+  const refresh = useCallback(async (): Promise<void> => {
     try {
       setIngredients(await listIngredients())
     } catch (caught) {
-      setError(messageOf(caught, 'Не удалось загрузить продукты.'))
+      setError(messageOf(caught, 'Не удалось загрузить ингредиенты.'))
     }
-  }
+  }, [])
 
   useEffect(() => {
     void refresh()
-  }, [])
+    return subscribeToDataChanges(() => {
+      void refresh()
+    })
+  }, [refresh])
 
   function startCreate(): void {
     setEditingId(null)
@@ -56,6 +68,15 @@ export function IngredientsPage() {
       unit: ingredient.unit,
       quantity: ingredient.hasPrice ? String(ingredient.purchaseQuantity) : '',
       totalPrice: ingredient.hasPrice ? String(ingredient.purchasePrice) : '',
+      gramsPerMl:
+        ingredient.gramsPerMl !== null && ingredient.gramsPerMl !== undefined
+          ? String(ingredient.gramsPerMl)
+          : '',
+      gramsPerPiece:
+        ingredient.gramsPerPiece !== null &&
+        ingredient.gramsPerPiece !== undefined
+          ? String(ingredient.gramsPerPiece)
+          : '',
     })
     setIsFormOpen(true)
     setError(null)
@@ -80,6 +101,25 @@ export function IngredientsPage() {
       setError('Укажите корректную цену, не меньше нуля.')
       return
     }
+    const gramsPerMl =
+      form.gramsPerMl.trim() === '' ? null : Number(form.gramsPerMl)
+    if (
+      gramsPerMl !== null &&
+      (!Number.isFinite(gramsPerMl) || gramsPerMl <= 0)
+    ) {
+      setError('Плотность (г в 1 мл) должна быть положительным числом.')
+      return
+    }
+    const gramsPerPiece =
+      form.gramsPerPiece.trim() === '' ? null : Number(form.gramsPerPiece)
+    if (
+      gramsPerPiece !== null &&
+      (!Number.isFinite(gramsPerPiece) || gramsPerPiece <= 0)
+    ) {
+      setError('Вес 1 шт. (г) должен быть положительным числом.')
+      return
+    }
+
     const pricePerUnit = hasPrice ? totalPrice / quantity : 0
 
     try {
@@ -91,6 +131,8 @@ export function IngredientsPage() {
         purchasePrice: totalPrice,
         pricePerUnit,
         hasPrice,
+        gramsPerMl,
+        gramsPerPiece,
       })
       setIsFormOpen(false)
       setEditingId(null)
@@ -98,29 +140,29 @@ export function IngredientsPage() {
       setError(null)
       await refresh()
     } catch (caught) {
-      setError(messageOf(caught, 'Не удалось сохранить продукт.'))
+      setError(messageOf(caught, 'Не удалось сохранить ингредиент.'))
     }
   }
 
   async function remove(ingredient: Ingredient): Promise<void> {
-    if (!window.confirm(`Удалить продукт «${ingredient.name}»?`)) return
+    if (!window.confirm(`Удалить ингредиент «${ingredient.name}»?`)) return
     try {
       await deleteIngredient(ingredient.id)
       setError(null)
       await refresh()
     } catch (caught) {
-      setError(messageOf(caught, 'Не удалось удалить продукт.'))
+      setError(messageOf(caught, 'Не удалось удалить ингредиент.'))
     }
   }
 
   return (
     <section>
       <PageHeading
-        title="Продукты"
-        description="Добавляйте продукты с ценой или без неё. Цена за единицу рассчитается автоматически."
+        title="Ингредиенты"
+        description="Справочник сырья и продуктов закупки. Цена за единицу рассчитывается автоматически."
       >
         <button className={styles.buttonPrimary} onClick={startCreate} type="button">
-          Добавить продукт
+          Добавить ингредиент
         </button>
       </PageHeading>
 
@@ -129,7 +171,7 @@ export function IngredientsPage() {
       {isFormOpen && (
         <form className={styles.formCard} onSubmit={(event) => void submit(event)}>
           <div className={styles.formTitle}>
-            <h2>{editingId ? 'Изменить продукт' : 'Новый продукт'}</h2>
+            <h2>{editingId ? 'Изменить ингредиент' : 'Новый ингредиент'}</h2>
             <button
               aria-label="Закрыть форму"
               className={styles.iconButton}
@@ -152,7 +194,7 @@ export function IngredientsPage() {
               />
             </label>
             <UnitSelect
-              label="Единица измерения"
+              label="Единица закупки"
               onChange={(unit) => setForm({ ...form, unit })}
               value={form.unit}
             />
@@ -169,7 +211,7 @@ export function IngredientsPage() {
               />
             </label>
             <label className={styles.field}>
-              <span>Цена за всё количество (необязательно)</span>
+              <span>Цена за упаковку (необязательно)</span>
               <input
                 min="0"
                 onChange={(event) =>
@@ -192,8 +234,39 @@ export function IngredientsPage() {
               </strong>
             </div>
           </div>
+
+          <div className={`${styles.formGrid} ${styles.conversionFieldsGrid}`}>
+            <label className={styles.field}>
+              <span>Плотность: г в 1 мл (для перевода г ↔ мл)</span>
+              <input
+                min="0"
+                onChange={(event) =>
+                  setForm({ ...form, gramsPerMl: event.currentTarget.value })
+                }
+                placeholder="Напр. 1.03 молоко, 0.92 масло"
+                step="any"
+                type="number"
+                value={form.gramsPerMl}
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Вес 1 шт. в граммах (для перевода шт. ↔ г)</span>
+              <input
+                min="0"
+                onChange={(event) =>
+                  setForm({ ...form, gramsPerPiece: event.currentTarget.value })
+                }
+                placeholder="Напр. 55 яйцо С1"
+                step="any"
+                type="number"
+                value={form.gramsPerPiece}
+              />
+            </label>
+          </div>
+
           <p className={styles.mutedText}>
-            Чтобы добавить продукт без цены, оставьте количество и цену пустыми.
+            Чтобы добавить ингредиент без цены, оставьте количество и цену пустыми.
+            Плотность и вес 1 шт. позволяют в рецептах переводить массу в объём или штуки.
           </p>
           <div className={styles.formActions}>
             <button className={styles.buttonPrimary} type="submit">
@@ -212,16 +285,16 @@ export function IngredientsPage() {
 
       {ingredients.length === 0 ? (
         <div className={styles.emptyState}>
-          <h2>Пока нет продуктов</h2>
-          <p>Добавьте продукты, чтобы использовать их в рецептах.</p>
+          <h2>Пока нет ингредиентов</h2>
+          <p>Добавьте ингредиенты здесь или прямо при составлении рецепта.</p>
         </div>
       ) : (
         <div className={styles.tableCard}>
           <table className={`${styles.table} ${styles.stickyFirstColumn}`}>
             <thead>
               <tr>
-                <th scope="col">Продукт</th>
-                <th scope="col">Количество</th>
+                <th scope="col">Ингредиент</th>
+                <th scope="col">Упаковка</th>
                 <th scope="col">Цена покупки</th>
                 <th scope="col">Цена за единицу</th>
                 <th scope="col">
@@ -230,44 +303,60 @@ export function IngredientsPage() {
               </tr>
             </thead>
             <tbody>
-              {ingredients.map((ingredient) => (
-                <tr key={ingredient.id}>
-                  <th scope="row">{ingredient.name}</th>
-                  <td>
-                    {ingredient.hasPrice
-                      ? `${formatNumber(ingredient.purchaseQuantity)} ${unitLabels[ingredient.unit]}`
-                      : '—'}
-                  </td>
-                  <td>
-                    {ingredient.hasPrice
-                      ? formatCurrency(ingredient.purchasePrice)
-                      : 'Не указана'}
-                  </td>
-                  <td>
-                    {ingredient.hasPrice
-                      ? `${formatCurrency(ingredient.pricePerUnit)}/${unitLabels[ingredient.unit]}`
-                      : 'Не указана'}
-                  </td>
-                  <td className={styles.tableRowActions}>
-                    <div className={styles.rowActionStack}>
-                      <button
-                        className={styles.tableActionButton}
-                        onClick={() => startEdit(ingredient)}
-                        type="button"
-                      >
-                        Изменить
-                      </button>
-                      <button
-                        className={`${styles.tableActionButton} ${styles.tableActionButtonDanger}`}
-                        onClick={() => void remove(ingredient)}
-                        type="button"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {ingredients.map((ingredient) => {
+                const bridgeNotes: string[] = []
+                if (ingredient.gramsPerMl) {
+                  bridgeNotes.push(`1 мл = ${formatNumber(ingredient.gramsPerMl)} г`)
+                }
+                if (ingredient.gramsPerPiece) {
+                  bridgeNotes.push(`1 шт. = ${formatNumber(ingredient.gramsPerPiece)} г`)
+                }
+                return (
+                  <tr key={ingredient.id}>
+                    <th scope="row">
+                      {ingredient.name}
+                      {bridgeNotes.length > 0 && (
+                        <span className={styles.rowSubtitle}>
+                          {bridgeNotes.join(' · ')}
+                        </span>
+                      )}
+                    </th>
+                    <td>
+                      {ingredient.hasPrice
+                        ? `${formatNumber(ingredient.purchaseQuantity)} ${unitLabels[ingredient.unit]}`
+                        : '—'}
+                    </td>
+                    <td>
+                      {ingredient.hasPrice
+                        ? formatCurrency(ingredient.purchasePrice)
+                        : 'Не указана'}
+                    </td>
+                    <td>
+                      {ingredient.hasPrice
+                        ? `${formatCurrency(ingredient.pricePerUnit)}/${unitLabels[ingredient.unit]}`
+                        : 'Не указана'}
+                    </td>
+                    <td className={styles.tableRowActions}>
+                      <div className={styles.rowActionStack}>
+                        <button
+                          className={styles.tableActionButton}
+                          onClick={() => startEdit(ingredient)}
+                          type="button"
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          className={`${styles.tableActionButton} ${styles.tableActionButtonDanger}`}
+                          onClick={() => void remove(ingredient)}
+                          type="button"
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
